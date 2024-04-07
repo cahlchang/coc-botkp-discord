@@ -5,6 +5,11 @@
             "label": "run_make",
             "type": "shell",
             "command": "make",
+            "options": {
+                "env": {
+                  "MY_VARIABLE": "${env:MY_VARIABLE}"
+                }
+              }
             "args": [
                 "run_command_with_notification"
             ],
