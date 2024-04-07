@@ -1,3 +1,41 @@
+#lambda python package
+lambda/coc-bot-kp/PIL/
+lambda/coc-bot-kp/Pillow-9.3.0.dist-info/
+lambda/coc-bot-kp/Pillow.libs/
+lambda/coc-bot-kp/PyNaCl-1.5.0.dist-info/
+lambda/coc-bot-kp/bin/
+lambda/coc-bot-kp/certifi-2022.12.7.dist-info/
+lambda/coc-bot-kp/certifi/
+lambda/coc-bot-kp/cffi-1.15.1.dist-info/
+lambda/coc-bot-kp/cffi/
+lambda/coc-bot-kp/charset_normalizer-3.0.1.dist-info/
+lambda/coc-bot-kp/charset_normalizer/
+lambda/coc-bot-kp/cv2/
+lambda/coc-bot-kp/dateutil/
+lambda/coc-bot-kp/haarcascade_frontalface_alt.xml
+lambda/coc-bot-kp/haarcascade_frontalface_default.xml
+lambda/coc-bot-kp/haarcascade_mcs_nose.xml
+lambda/coc-bot-kp/haarcascade_mcs_upperbody.xml
+lambda/coc-bot-kp/idna-3.4.dist-info/
+lambda/coc-bot-kp/idna/
+lambda/coc-bot-kp/jmespath-1.0.1.dist-info/
+lambda/coc-bot-kp/jmespath/
+lambda/coc-bot-kp/lbpcascade_animeface.xml
+lambda/coc-bot-kp/nacl/
+lambda/coc-bot-kp/numpy-1.24.2.dist-info/
+lambda/coc-bot-kp/numpy.libs/
+lambda/coc-bot-kp/numpy/
+lambda/coc-bot-kp/opencv_python_headless-4.7.0.72.dist-info/
+lambda/coc-bot-kp/opencv_python_headless.libs/
+lambda/coc-bot-kp/pycparser-2.21.dist-info/
+lambda/coc-bot-kp/pycparser/
+lambda/coc-bot-kp/python_dateutil-2.8.2.dist-info/
+lambda/coc-bot-kp/requests*
+lambda/coc-bot-kp/s3transfer*
+lambda/coc-bot-kp/six*
+lambda/coc-bot-kp/urllib3-1.26.14.dist-info/
+lambda/coc-bot-kp/urllib3/
+
 #add custom
 webhook_url.txt
 
