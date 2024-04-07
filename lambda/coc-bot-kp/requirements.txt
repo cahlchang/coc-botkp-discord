@@ -1,0 +1,7 @@
+pynacl
+requests
+pillow == 9.3.0
+opencv-python-headless
+numpy == 1.26.0
+boto3
+python-dotenv
