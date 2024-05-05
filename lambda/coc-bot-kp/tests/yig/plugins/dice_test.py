@@ -1,9 +1,11 @@
 import pytest
 from yig.plugins.roll import create_post_message_rolls_result
 
+
 @pytest.fixture
 def mock_eval_roll_or_value(mocker):
-    return mocker.patch('yig.plugins.roll.eval_roll_or_value')
+    return mocker.patch("yig.plugins.roll.eval_roll_or_value")
+
 
 def test_simple_roll(mock_eval_roll_or_value):
     mock_eval_roll_or_value.return_value = [3, 4]
@@ -17,6 +19,7 @@ def test_simple_roll(mock_eval_roll_or_value):
     assert message == expected_message
     assert detail == expected_detail
     assert total == expected_sum
+
 
 def test_complex_roll(mock_eval_roll_or_value):
     mock_eval_roll_or_value.side_effect = [[3, 4], [2, 2, 2]]

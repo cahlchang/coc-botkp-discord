@@ -5,9 +5,18 @@ import unicodedata
 import datetime
 
 from yig.bot import listener
-from yig.util.data import write_user_data, get_basic_status
-#from yig.util.data import get_state_data, remove_state_data, write_user_data, get_status_message,  get_user_param, get_now_status
-# from yig.util.view import create_param_image, get_pc_image_url, get_param_image_path, save_param_image, section_builder, divider_builder
+from yig.util.data import (
+    write_user_data,
+    get_basic_status,
+    get_state_data,
+    get_user_param,
+    get_now_status
+)
+
+# from yig.util.data import get_state_data, remove_state_data, write_user_data, get_status_message,  get_user_param, get_now_status
+from yig.util.view import get_pc_image_url
+
+# create_param_image, get_pc_image_url, get_param_image_path, save_param_image, section_builder, divider_builder
 
 import yig.config
 
@@ -31,25 +40,54 @@ def init_charasheet(bot):
     pc_id = user_param["pc_id"]
     key = f"{pc_id}.json"
 
-    write_pc_json = json.dumps(user_param, ensure_ascii=False).encode('utf-8')
+    write_pc_json = json.dumps(user_param, ensure_ascii=False).encode("utf-8")
     write_user_data(bot.guild_id, bot.user_id, key, write_pc_json)
 
     tz = datetime.timezone.utc
     now = datetime.datetime.now(tz)
     state_data = {
         "url": url,
-        "pc_id": "%s" % user_param["pc_id"],
-        "ts": now.timestamp()
+        "pc_id": user_param["pc_id"],
+        "ts": now.timestamp(),
     }
 
-    write_state_json = json.dumps(state_data, ensure_ascii=False).encode('utf-8')
-    #set_state_data(bot.team_id, bot.user_id, write_state_json)
-    write_user_data(bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, write_state_json)
-    return build_chara_response(user_param, state_data, bot.guild_id, bot.user_id, pc_id)
+    write_state_json = json.dumps(state_data, ensure_ascii=False).encode("utf-8")
+    # set_state_data(bot.guild_id, bot.user_id, write_state_json)
+    write_user_data(
+        bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, write_state_json
+    )
+    return build_chara_response(
+        "CHARACTER INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
+    )
+
+
+@listener("reload")
+def update_charasheet_with_vampire(bot):
+    state_data = get_state_data(bot.guild_id, bot.user_id)
+    tz = datetime.timezone.utc
+    now = datetime.datetime.now(tz)
+    state_data["ts"] = now.timestamp()
+    user_param_old = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
+    url = state_data["url"]
+    res = requests.get(url)
+    request_json = json.loads(res.text)
+    if user_param_old["game"] == "coc":
+        user_param = format_param_json_with_6(bot, request_json)
+    elif user_param_old["game"] == "coc7":
+        user_param = format_param_json_with_7(bot, request_json)
+
+    user_param["url"] = user_param_old["url"]
+    pc_id = user_param["pc_id"]
+    key = f"{pc_id}.json"
+
+    write_pc_json = json.dumps(user_param, ensure_ascii=False).encode("utf-8")
+    write_user_data(bot.guild_id, bot.user_id, key, write_pc_json)
+    return build_chara_response(
+        "RELOAD CHARACTER", user_param, state_data, bot.guild_id, bot.user_id, pc_id
+    )
 
 
 def format_param_json_with_6(bot, request_json):
-
     param_json = {}
 
     REPLACE_PARAMETER = {
@@ -66,71 +104,76 @@ def format_param_json_with_6(bot, request_json):
         "NP11": "初期SAN",
         "NP12": "アイデア",
         "NP13": "幸運",
-        "NP14": "知識"}
+        "NP14": "知識",
+    }
 
-    tba_replace = ["回避",
-                   "キック",
-                   "組み付き",
-                   "こぶし（パンチ）",
-                   "頭突き",
-                   "投擲",
-                   "マーシャルアーツ",
-                   "拳銃",
-                   "サブマシンガン",
-                   "ショットガン",
-                   "マシンガン",
-                   "ライフル"]
+    tba_replace = [
+        "回避",
+        "キック",
+        "組み付き",
+        "こぶし（パンチ）",
+        "頭突き",
+        "投擲",
+        "マーシャルアーツ",
+        "拳銃",
+        "サブマシンガン",
+        "ショットガン",
+        "マシンガン",
+        "ライフル",
+    ]
 
-    tfa_replace = ["応急手当",
-                   "鍵開け",
-                   "隠す",
-                   "隠れる",
-                   "聞き耳",
-                   "忍び歩き",
-                   "写真術",
-                   "精神分析",
-                   "追跡",
-                   "登攀",
-                   "図書館",
-                   "目星"]
+    tfa_replace = [
+        "応急手当",
+        "鍵開け",
+        "隠す",
+        "隠れる",
+        "聞き耳",
+        "忍び歩き",
+        "写真術",
+        "精神分析",
+        "追跡",
+        "登攀",
+        "図書館",
+        "目星",
+    ]
 
-    taa_replace = ["運転",
-                   "機械修理",
-                   "重機械操作",
-                   "乗馬",
-                   "水泳",
-                   "製作",
-                   "操縦",
-                   "跳躍",
-                   "電気修理",
-                   "ナビゲート",
-                   "変装"]
+    taa_replace = [
+        "運転",
+        "機械修理",
+        "重機械操作",
+        "乗馬",
+        "水泳",
+        "製作",
+        "操縦",
+        "跳躍",
+        "電気修理",
+        "ナビゲート",
+        "変装",
+    ]
 
-    tca_replace = ["言いくるめ",
-                   "信用",
-                   "説得",
-                   "値切り",
-                   "母国語"]
+    tca_replace = ["言いくるめ", "信用", "説得", "値切り", "母国語"]
 
-    tka_replace = ["医学",
-                   "オカルト",
-                   "化学",
-                   "クトゥルフ神話",
-                   "芸術",
-                   "経理",
-                   "考古学",
-                   "コンピューター",
-                   "心理学",
-                   "人類学",
-                   "生物学",
-                   "地質学",
-                   "電子工学",
-                   "天文学",
-                   "博物学",
-                   "物理学",
-                   "法律",
-                   "薬学",
-                   "歴史"]
+    tka_replace = [
+        "医学",
+        "オカルト",
+        "化学",
+        "クトゥルフ神話",
+        "芸術",
+        "経理",
+        "考古学",
+        "コンピューター",
+        "心理学",
+        "人類学",
+        "生物学",
+        "地質学",
+        "電子工学",
+        "天文学",
+        "博物学",
+        "物理学",
+        "法律",
+        "薬学",
+        "歴史",
+    ]
 
     for key, param in REPLACE_PARAMETER.items():
         param_json[param] = request_json[key]
@@ -210,7 +253,8 @@ def format_param_json_with_7(bot, request_json):
         "NP8": "EDU",
         "NP9": "MOV",
         "NP10": "HP",
-        "NP11": "MP"}
+        "NP11": "MP",
+    }
 
     for key, param in REPLACE_PARAMETER.items():
         param_json[param] = request_json[key]
@@ -223,12 +267,14 @@ def format_param_json_with_7(bot, request_json):
         elif fuki_name != "":
             skill_name = f"{skill_name}【{fuki_name}】"
 
-        lst = [request_json["SKAD"][idx],
-               request_json["SKAS"][idx],
-               request_json["SKAK"][idx],
-               request_json["SKAA"][idx],
-               request_json["SKAO"][idx],
-               request_json["SKAP"][idx]]
+        lst = [
+            request_json["SKAD"][idx],
+            request_json["SKAS"][idx],
+            request_json["SKAK"][idx],
+            request_json["SKAA"][idx],
+            request_json["SKAO"][idx],
+            request_json["SKAP"][idx],
+        ]
         lst = [i if i != "" else "0" for i in lst]
         param_json[skill_name] = lst
 
@@ -261,8 +307,10 @@ def format_param_json_with_7(bot, request_json):
     return param_json
 
 
-def build_chara_response(user_param, state_data, guild_id, user_id, pc_id):
-    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(user_param, state_data)
+def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id):
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, state_data
+    )
 
     if user_param["game"] == "coc7":
         now_luck = get_now_status("幸運", user_param, state_data)
@@ -277,7 +325,7 @@ def build_chara_response(user_param, state_data, guild_id, user_id, pc_id):
     sex = user_param["sex"]
     skill_data = {}
     for key, param in user_param.items():
-        if isinstance(param, list) and len(param) == 6: # 保管庫のjson都合
+        if isinstance(param, list) and len(param) == 6:  # 保管庫のjson都合
             if sum([int(s) for s in param][1:4]) == 0:
                 continue
             if key in ("製作", "芸術", "母国語") and user_param["game"] == "coc":
@@ -285,14 +333,14 @@ def build_chara_response(user_param, state_data, guild_id, user_id, pc_id):
             skill_point = int(param[5])
             if skill_point != 0:
                 skill_data[key] = skill_point
-    sorted_skill_data = sorted(skill_data.items(), key=lambda x:x[1], reverse=True)
-    #image_url = get_pc_image_url(guild_id, user_id, pc_id, state_data['ts'])
+    sorted_skill_data = sorted(skill_data.items(), key=lambda x: x[1], reverse=True)
+    # image_url = get_pc_image_url(guild_id, user_id, pc_id, state_data['ts'])
     skill_message = ""
 
     def get_east_asian_width_count(text):
         count = 0
         for c in text:
-            if unicodedata.east_asian_width(c) in 'FWA':
+            if unicodedata.east_asian_width(c) in "FWA":
                 count += 2
             else:
                 count += 1
@@ -336,41 +384,32 @@ def build_chara_response(user_param, state_data, guild_id, user_id, pc_id):
 
     return {
         "content": "",
-        "components": [
-            {
-                "type": 1,
-                "components": [
-                    {
-                        "style": 1,
-                        "label": "update",
-                        "custom_id": "update_button",
-                        "disabled": False,
-                        "type": 2
-                    }
-                ]
-            }
-        ],
         "embeds": [
             {
                 "type": "rich",
-                "title": "PLAYER CHARACTER",
+                "title": title,
                 "description": "",
                 "color": 0x000000,
-                "name": f"**{pc_name}**",
-                "value": (f"**JOB: ** {job}　 **AGE: ** {age}　 **SEX :** {sex}\n" +
-                line3 +
-                param_message),
-                "inline": False
-            },
-            {
-                "name": "SKILL",
-                "value": skill_message,
-                "inline": False
+                "fields": [
+                    {
+                        "name": f"**{pc_name}**",
+                        "value": (
+                            f"**JOB: ** {job}　 **AGE: ** {age}　 **SEX :** {sex}\n"
+                            + line3
+                            + param_message
+                        ),
+                    },
+                    {"name": "SKILL", "value": skill_message},
+                ],
+                "inline": False,
+                "thumbnail": {
+                    "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"])
+                }
+                # "image": {
+                #     "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"]),
+                #     "height": 400,
+                #     "width": 200
+                # }
             }
         ],
-        "image": {
-            "url": "https://d13xcuicr0q687.cloudfront.net/public/noimage.png",
-            "height": 400,
-            "width": 200
-        }
     }

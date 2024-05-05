@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict
 
 from yig.bot import listener
 from yig.util.data import get_user_param, get_basic_status, get_state_data
+
 # set_state_data,
 # write_session_data, read_session_data
 from yig.util.view import get_pc_image_url
@@ -31,10 +32,14 @@ def roll_skill(bot):
 
     # Get user's status information
     state_data = get_state_data(guild_id=bot.guild_id, user_id=bot.user_id)
-    user_param = get_user_param(guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"])
+    user_param = get_user_param(
+        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+    )
 
     # Analyze parameters from bot's value
-    roll, operant, num_arg = analysis_roll_and_calculation(value=bot.action_data["options"][0]["value"])
+    roll, operant, num_arg = analysis_roll_and_calculation(
+        value=bot.action_data["options"][0]["value"]
+    )
 
     # Convert the skill name to the corresponding skill name if there is an alias for the skill name
     alias_roll = {"こぶし": "こぶし（パンチ）"}
@@ -63,9 +68,11 @@ def roll_skill(bot):
     if user_param["game"] == "coc":
         result, color = judge_1d100_with_6_ver(target=num_targ, dice=num_rand)
     else:
-        result, color, difficult = judge_1d100_with_7_ver(target=num_targ, dice=num_rand)
+        result, color, difficult = judge_1d100_with_7_ver(
+            target=num_targ, dice=num_rand
+        )
 
-    # raw_session_data = read_session_data(bot.team_id, "%s/%s.json" % (bot.channel_name ,state_data["pc_id"]))
+    raw_session_data = read_session_data(bot.team_id, "%s/%s.json" % (bot.channel_name ,state_data["pc_id"]))
     # if raw_session_data:
     #     session_data = json.loads(raw_session_data)
     #     session_data.append({"roll": roll.upper(),
@@ -75,8 +82,12 @@ def roll_skill(bot):
     #     write_session_data(bot.team_id, "%s/%s.json" % (bot.channel_name ,state_data["pc_id"]), json.dumps(session_data, ensure_ascii=False))
 
     # Get status information.
-    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(user_param, state_data)
-    image_url = get_pc_image_url(bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"])
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, state_data
+    )
+    image_url = get_pc_image_url(
+        bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
+    )
 
     # Create a data to be returned
     return_object = {
@@ -88,19 +99,27 @@ def roll_skill(bot):
                 "fields": [
                     {
                         "name": f"{roll} {num_rand}/{num_targ} ({num}{operant}{num_arg})",
-                        "value": ""
+                        "value": "",
                     }
                 ],
                 "description": "",
                 "color": color,
-                "thumbnail": {
-                    "url": image_url
-                },
+                "thumbnail": {"url": image_url},
                 "footer": {
-                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s" % (user_param["name"], now_hp, max_hp, now_mp, max_mp, now_san, max_san, db),
-                }
+                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s"
+                    % (
+                        user_param["name"],
+                        now_hp,
+                        max_hp,
+                        now_mp,
+                        max_mp,
+                        now_san,
+                        max_san,
+                        db,
+                    ),
+                },
             }
-        ]
+        ],
     }
     return return_object
 
@@ -122,12 +141,20 @@ def roll_dice(bot):
     """
     # Get user's status information
     state_data = get_state_data(guild_id=bot.guild_id, user_id=bot.user_id)
-    user_param = get_user_param(guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"])
+    user_param = get_user_param(
+        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+    )
 
-    str_message, str_detail, sum_result = create_post_message_rolls_result(bot.action_data["options"][0]["value"])
-    msg =  f"*{sum_result}* 【ROLLED】\n {str_detail}"
-    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(user_param, state_data)
-    image_url = get_pc_image_url(bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"])
+    str_message, str_detail, sum_result = create_post_message_rolls_result(
+        bot.action_data["options"][0]["value"]
+    )
+    msg = f"*{sum_result}* 【ROLLED】\n {str_detail}"
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, state_data
+    )
+    image_url = get_pc_image_url(
+        bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
+    )
 
     return {
         "content": "",
@@ -135,29 +162,34 @@ def roll_dice(bot):
             {
                 "type": "rich",
                 "title": "ダイスロール",
-                "fields": [
-                    {
-                        "name": str(sum_result),
-                        "value": msg
-                    }
-                ],
+                "fields": [{"name": str(sum_result), "value": msg}],
                 "description": str_message,
                 "color": yig.config.COLOR_INFO,
-                "thumbnail": {
-                    "url": image_url
-                },
+                "thumbnail": {"url": image_url},
                 "footer": {
-                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s" % (user_param["name"], now_hp, max_hp, now_mp, max_mp, now_san, max_san, db),
-                }
+                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s"
+                    % (
+                        user_param["name"],
+                        now_hp,
+                        max_hp,
+                        now_mp,
+                        max_mp,
+                        now_san,
+                        max_san,
+                        db,
+                    ),
+                },
             }
-        ]
+        ],
     }
 
 
 @listener("sanc")
 def sanity_check(bot):
     state_data = get_state_data(bot.guild_id, bot.user_id)
-    user_param = get_user_param(guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"])
+    user_param = get_user_param(
+        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+    )
     param = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
     c_san = int(param["現在SAN"])
     if "SAN" in state_data:
@@ -166,35 +198,42 @@ def sanity_check(bot):
         d_san = 0
     sum_san = c_san + d_san
     message, color, reduce_message = get_sanc_result(bot.action_data, sum_san)
-    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(user_param, state_data)
-    image_url = get_pc_image_url(bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"])
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, state_data
+    )
+    image_url = get_pc_image_url(
+        bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
+    )
     return_obj = {
         "content": "",
         "embeds": [
             {
                 "type": "rich",
                 "title": "SANチェック",
-                "fields": [
-                    {
-                        "name": message,
-                        "value": reduce_message
-                    }
-                ],
+                "fields": [{"name": message, "value": reduce_message}],
                 "description": "",
                 "color": color,
-                "thumbnail": {
-                    "url": image_url
-                },
+                "thumbnail": {"url": image_url},
                 "footer": {
-                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s" % (user_param["name"], now_hp, max_hp, now_mp, max_mp, now_san, max_san, db),
-                }
+                    "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s"
+                    % (
+                        user_param["name"],
+                        now_hp,
+                        max_hp,
+                        now_mp,
+                        max_mp,
+                        now_san,
+                        max_san,
+                        db,
+                    ),
+                },
             }
-        ]
+        ],
     }
     return return_obj
 
 
-def analysis_roll_and_calculation(value:str) -> Tuple[str, str, int]:
+def analysis_roll_and_calculation(value: str) -> Tuple[str, str, int]:
     """
     Analyze a roll value and extract its components for calculation.
 
@@ -234,7 +273,7 @@ def analysis_roll_and_calculation(value:str) -> Tuple[str, str, int]:
     return roll, operant, number
 
 
-def calculation(number_x:int, operant:str, number_y:int) -> int:
+def calculation(number_x: int, operant: str, number_y: int) -> int:
     """
     Perform a calculation from two values.
 
@@ -262,7 +301,6 @@ def calculation(number_x:int, operant:str, number_y:int) -> int:
     return op_dict[operant](number_x, number_y)
 
 
-
 def eval_roll_or_value(text: str) -> List[int]:
     try:
         return [int(text)]
@@ -271,7 +309,11 @@ def eval_roll_or_value(text: str) -> List[int]:
         if dice_matcher is None:
             return [0]
         dice_count, dice_type = map(int, dice_matcher.groups())
-        return roll_dice(dice_count, dice_type) if dice_count > 0 and dice_type > 0 else [0]
+        return (
+            roll_dice(dice_count, dice_type)
+            if dice_count > 0 and dice_type > 0
+            else [0]
+        )
 
 
 def create_post_message_rolls_result(key: str) -> Tuple[str, str, int]:
@@ -303,7 +345,9 @@ def create_post_message_rolls_result(key: str) -> Tuple[str, str, int]:
             str_detail += match.ljust(8)
 
         # 加算または減算を実行
-        sum_result = sum_result + dice_sum if current_operation == "+" else sum_result - dice_sum
+        sum_result = (
+            sum_result + dice_sum if current_operation == "+" else sum_result - dice_sum
+        )
         str_message += f"{current_operation}{match}" if str_message else match
         str_detail += f" [{'plus' if current_operation == '+' else 'minus'}]\n"
 
@@ -400,7 +444,7 @@ def get_sanc_result(data: Dict, pc_san: int) -> Tuple[str, str, str]:
     message = f"{result_word}  {dice_result}/{pc_san}"
     reduce_message = ""
     if "options" in data:
-        match_result = split_alternative_roll_or_value(data['options'][0]['value'])
+        match_result = split_alternative_roll_or_value(data["options"][0]["value"])
         if match_result:
             san_roll = match_result[0] if is_success else match_result[1]
             san_damage = sum(roll_or_parse_dice(san_roll))

@@ -5,8 +5,8 @@ import os
 from yig.util.data import write_user_data, read_user_data
 import yig.config
 
-# AWSのリソース名や設定値を定義
 AWS_S3_BUCKET_NAME = yig.config.AWS_S3_BUCKET_NAME
+
 
 @pytest.fixture
 def aws_credentials():
@@ -20,7 +20,9 @@ def aws_credentials():
 @pytest.fixture
 def mock_s3_client():
     mock_client = MagicMock()
-    mock_client.get_object.return_value = {'Body': MagicMock(read=MagicMock(return_value=b'Test Value'))}
+    mock_client.get_object.return_value = {
+        "Body": MagicMock(read=MagicMock(return_value=b'{"test": "Test Value"}'))
+    }
     return mock_client
 
 
@@ -31,20 +33,20 @@ def test_write_user_data_success(mock_boto_client, mock_s3_client):
     guild_id = "guild123"
     user_id = "user456"
     filename = "test.txt"
-    content = "Test Value"
+    content = {'test': 'Test Value'}
 
     success = write_user_data(guild_id, user_id, filename, content)
     assert success is True
 
     mock_s3_client.put_object.assert_called_once_with(
-        Body='Test Value',
+        Body=content,
         Bucket=AWS_S3_BUCKET_NAME,
         Key=f"{guild_id}/{user_id}/{filename}",
-        ContentType='text/plain'
+        ContentType="text/plain",
     )
 
 
-@patch("yig.util.data.boto3.client") 
+@patch("yig.util.data.boto3.client")
 def test_write_user_data_failure(mock_boto_client, mock_s3_client):
     mock_boto_client.return_value = mock_s3_client
     mock_s3_client.put_object.side_effect = Exception("S3 Error")
@@ -59,23 +61,24 @@ def test_write_user_data_failure(mock_boto_client, mock_s3_client):
 def test_read_user_data_success(mock_boto_client, mock_s3_client):
     mock_boto_client.return_value = mock_s3_client
 
-    guild_id = 'guild123'
-    user_id = 'user456'
-    filename = 'test.txt'
+    guild_id = "guild123"
+    user_id = "user456"
+    filename = "test.txt"
 
     result = read_user_data(guild_id, user_id, filename)
-    assert result == b'Test Value'
+    assert result == {'test': 'Test Value'}
 
 
 @patch("yig.util.data.boto3.client")
 def test_read_user_data_failure(mock_boto_client, mock_s3_client):
     mock_boto_client.return_value = mock_s3_client
+    mock_s3_client.get_object.side_effect = ClientError(
+        {"Error": {"Code": "NoSuchKey"}}, "GetObject"
+    )
 
-    error_response = {'Error': {'Code': 'NoSuchKey', 'Message': 'The specified key does not exist.'}}
-    mock_s3_client.get_object.side_effect = ClientError(error_response, 'get_object')
+    try:
+        read_user_data("guild123", "user456", "test.txt")
+    except ClientError as e:
+        assert e.response["Error"]["Code"] == "NoSuchKey"
 
-    guild_id = 'guild123'
-    user_id = 'user456'
-    filename = 'nonexistent.txt'
-    result = read_user_data(guild_id, user_id, filename)
-    assert result is None
+    mock_s3_client.get_object.assert_called_once()

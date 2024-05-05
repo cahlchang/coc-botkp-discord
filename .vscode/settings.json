@@ -15,5 +15,10 @@
         "SKAD",
         "SKAS",
         "wheellab"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "lambda/coc-bot-kp"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

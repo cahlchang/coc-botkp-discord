@@ -11,13 +11,15 @@ import yig.config
 
 def write_pc_image(guild_id, user_id, pc_id, image_byte):
     image_key = f"{guild_id}/{user_id}/{pc_id}_thum.jpg"
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
 
-    s3_client.put_object(Bucket=yig.config.AWS_S3_BUCKET_NAME,
-                        Key=image_key,
-                        Body=image_byte,
-                        Tagging='public-object=yes',
-                        ContentType='image/jpeg')
+    s3_client.put_object(
+        Bucket=yig.config.AWS_S3_BUCKET_NAME,
+        Key=image_key,
+        Body=image_byte,
+        Tagging="public-object=yes",
+        ContentType="image/jpeg",
+    )
 
     return image_key
 

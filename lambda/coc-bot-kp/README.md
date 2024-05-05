@@ -16,11 +16,9 @@ python -m pytest
 とりあえず全コマンド2動くように
 
 実装済み
-init
 跳躍（roll_skill）
 sanc
 sanc 1d4/1d20
-add_image
 キック-20
 組み付き*2
 こぶし+20
@@ -29,16 +27,21 @@ con
 信用/2
 
 
+後でよくする
+init
+status
+add_image -> originalも残す
+
 変える
 'u HP+5' -> changeにしたけどupdateに戻す
 
+実装中
 
 テスト済み
 handler
 1D100
 
 未実装
-'status'
 'result'
 'reload'
 'start' -> 実装が大きく変わる
