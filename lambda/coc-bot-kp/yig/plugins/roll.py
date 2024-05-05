@@ -6,10 +6,9 @@ from typing import List, Tuple, Dict
 
 
 from yig.bot import listener
-from yig.util.data import get_user_param, get_basic_status, get_state_data
+from yig.util.data import get_user_param, get_basic_status, read_user_data, read_session_data
 
 # set_state_data,
-# write_session_data, read_session_data
 from yig.util.view import get_pc_image_url
 import yig.config
 
@@ -31,7 +30,10 @@ def roll_skill(bot):
     """
 
     # Get user's status information
-    state_data = get_state_data(guild_id=bot.guild_id, user_id=bot.user_id)
+    state_data = read_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+    )
+
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )

@@ -9,14 +9,28 @@ from PIL import Image, ImageDraw, ImageFont
 import yig.config
 
 
-def write_pc_image(guild_id, user_id, pc_id, image_byte):
+def write_pc_image(guild_id, user_id, pc_id, image_bytes):
     image_key = f"{guild_id}/{user_id}/{pc_id}_thum.jpg"
     s3_client = boto3.client("s3")
 
     s3_client.put_object(
         Bucket=yig.config.AWS_S3_BUCKET_NAME,
         Key=image_key,
-        Body=image_byte,
+        Body=image_bytes,
+        Tagging="public-object=yes",
+        ContentType="image/jpeg",
+    )
+
+    return image_key
+
+def write_pc_image_origin(guild_id, user_id, pc_id, image_bytes):
+    image_key = f"{guild_id}/{user_id}/{pc_id}_origin.jpg"
+    s3_client = boto3.client("s3")
+
+    s3_client.put_object(
+        Bucket=yig.config.AWS_S3_BUCKET_NAME,
+        Key=image_key,
+        Body=image_bytes,
         Tagging="public-object=yes",
         ContentType="image/jpeg",
     )

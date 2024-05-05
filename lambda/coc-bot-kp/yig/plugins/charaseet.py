@@ -1,14 +1,15 @@
 import requests
 import re
+from re import Match
 import json
 import unicodedata
 import datetime
 
-from yig.bot import listener
+from yig.bot import listener, Bot
 from yig.util.data import (
+    read_user_data,
     write_user_data,
     get_basic_status,
-    get_state_data,
     get_user_param,
     get_now_status
 )
@@ -17,31 +18,30 @@ from yig.util.data import (
 from yig.util.view import get_pc_image_url
 
 # create_param_image, get_pc_image_url, get_param_image_path, save_param_image, section_builder, divider_builder
-
 import yig.config
 
-
 @listener("init")
-def init_charasheet(bot):
-    matcher = re.match(r"(https.*)", bot.action_data["options"][0]["value"])
-    url_plane = matcher.group(1)
-    url = f"{url_plane}.json"
-    response = requests.get(url)
+def init_charasheet(bot :Bot):
+    matcher: Match[str] | None = re.match(r"(https.*)", bot.action_data["options"][0]["value"])
+    if not matcher:
+        raise ValueError("Invalid URL")
+    url_plane: str = matcher.group(1)
+    url: str = f"{url_plane}.json"
+    response: requests.Response = requests.get(url)
 
-    request_json = json.loads(response.text)
+    request_json: dict = json.loads(response.text)
 
     if request_json["game"] == "coc":
-        user_param = format_param_json_with_6(bot, request_json)
+        user_param: dict = format_param_json_with_6(bot, request_json)
     elif request_json["game"] == "coc7":
-        user_param = format_param_json_with_7(bot, request_json)
+        user_param: dict = format_param_json_with_7(bot, request_json)
 
     user_param["url"] = url_plane
 
-    pc_id = user_param["pc_id"]
-    key = f"{pc_id}.json"
+    pc_id: str = user_param["pc_id"]
+    key: str = f"{pc_id}.json"
 
-    write_pc_json = json.dumps(user_param, ensure_ascii=False).encode("utf-8")
-    write_user_data(bot.guild_id, bot.user_id, key, write_pc_json)
+    write_user_data(bot.guild_id, bot.user_id, key, user_param)
 
     tz = datetime.timezone.utc
     now = datetime.datetime.now(tz)
@@ -51,10 +51,8 @@ def init_charasheet(bot):
         "ts": now.timestamp(),
     }
 
-    write_state_json = json.dumps(state_data, ensure_ascii=False).encode("utf-8")
-    # set_state_data(bot.guild_id, bot.user_id, write_state_json)
     write_user_data(
-        bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, write_state_json
+        bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, state_data
     )
     return build_chara_response(
         "CHARACTER INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
@@ -63,11 +61,11 @@ def init_charasheet(bot):
 
 @listener("reload")
 def update_charasheet_with_vampire(bot):
-    state_data = get_state_data(bot.guild_id, bot.user_id)
+    state_data = read_user_data(bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH)
+    user_param_old = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
     tz = datetime.timezone.utc
     now = datetime.datetime.now(tz)
     state_data["ts"] = now.timestamp()
-    user_param_old = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
     url = state_data["url"]
     res = requests.get(url)
     request_json = json.loads(res.text)
@@ -80,8 +78,7 @@ def update_charasheet_with_vampire(bot):
     pc_id = user_param["pc_id"]
     key = f"{pc_id}.json"
 
-    write_pc_json = json.dumps(user_param, ensure_ascii=False).encode("utf-8")
-    write_user_data(bot.guild_id, bot.user_id, key, write_pc_json)
+    write_user_data(bot.guild_id, bot.user_id, key, user_param)
     return build_chara_response(
         "RELOAD CHARACTER", user_param, state_data, bot.guild_id, bot.user_id, pc_id
     )

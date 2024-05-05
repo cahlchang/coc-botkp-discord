@@ -1,17 +1,11 @@
-import requests
 import json
 import boto3
-import imghdr
-import os
-import copy
 from botocore.exceptions import ClientError
-from PIL import Image
-from typing import List, Dict, Optional, Tuple
 
 import yig.config
 
 
-def write_user_data(guild_id: str, user_id: str, filename: str, content: str) -> bool:
+def write_user_data(guild_id: str, user_id: str, filename: str, content: dict) -> bool:
     """
     Write user data to S3 bucket.
 
@@ -37,15 +31,16 @@ def write_user_data(guild_id: str, user_id: str, filename: str, content: str) ->
 
     try:
         response = s3.put_object(
-            Body=content,
+            Body=json.dumps(content, ensure_ascii=False),
             Bucket=yig.config.AWS_S3_BUCKET_NAME,
             Key=obj_key,
             ContentType="text/plain",
         )
+        response_code = response["ResponseMetadata"]["HTTPStatusCode"]
+        if response_code != 200:
+            raise Exception(f"Failed to write user data: {response_code}")
     except Exception as e:
-        print(f"Failed to write user data: {e}")
-        return False
-
+        raise e
     return True
 
 
@@ -83,25 +78,89 @@ def read_user_data(guild_id: str, user_id: str, filename: str) -> dict:
     return json.loads(response["Body"].read().decode("utf-8"))
 
 
-def get_state_data(guild_id: str, user_id: str) -> dict:
+def remove_user_data(guild_id: str, user_id: str, filename: str) -> bool:
     """
-    Returns the state data for a given user from a specified file path.
+    Remove user data from the specified file in the given user's directory in the S3 bucket.
+
+    Parameters
+    ----------
+    guild_id : str
+        ID of the guild where the user is located.
+    user_id : str
+        ID of the user who owns the data to be removed.
+    filename : str
+        Name of the file containing the user data to be removed.
+
+    Returns
+    -------
+    bool
+        Returns True if the removal operation was successful, False otherwise.
+    """
+    s3 = boto3.client("s3")
+    key = f"{guild_id}/{user_id}/{filename}"
+
+    try:
+        s3.delete_object(Bucket=yig.config.AWS_S3_BUCKET_NAME, Key=key)
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            print(f"Failed to remove user data: {e}")
+        raise e
+    except Exception as e:
+        print(f"Failed to remove user data: {e}")
+        raise e
+
+    return True
+
+
+def write_session_data(guild_id: str, path: str, content:dict):
+    """
+    Write session data to the S3 bucket.
 
     Parameters
     ----------
     guild_id : str
         The ID of the guild.
-    user_id : str
-        The ID of the user.
 
-    Returns
-    -------
-    dict
-        A dictionary object containing the user's state data, or an empty dictionary if no data was found.
     """
-    return read_user_data(guild_id, user_id, yig.config.STATE_FILE_PATH)
+    try:
+        s3_client = boto3.resource('s3')
+        bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
+        obj = bucket.Object(f"{guild_id}/{path}")
+        response = obj.put(
+            Body=json.dumps(content, ensure_ascii=False),
+            ContentEncoding='utf-8',
+            ContentType='text/plane'
+        )
+        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+            raise Exception("Failed to write session data.")
+    except ClientError as e:
+        print(e)
+        raise e
 
-def get_user_param(guild_id: str, user_id: str, pc_id: str = "") -> dict:
+
+def read_session_data(guild_id : str, path:str) -> dict:
+    """
+    Read session data from the S3 bucket.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild.
+    path : str
+        The path to the session data.
+    """
+    try:
+        s3_client = boto3.resource('s3')
+        bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
+        obj = bucket.Object(f"{guild_id}/{path}")
+        response = obj.get()
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except ClientError as e:
+        print(e)
+        raise e
+
+
+def get_user_param(guild_id: str, user_id: str, pc_id: str) -> dict:
     """
     Get the parameter for the specified user.
 
@@ -119,22 +178,15 @@ def get_user_param(guild_id: str, user_id: str, pc_id: str = "") -> dict:
     -------
     dict
         The user's parameters.
-
     """
-    if pc_id is None:
-        state_data = get_state_data(guild_id, user_id)
-        if not state_data:
-            return {}
-        pc_id = state_data.get("pc_id")
-
     return read_user_data(guild_id, user_id, f"{pc_id}.json")
 
 
 def get_now_status(
     status_name: str,
-    user_param: Dict,
-    state_data: Dict,
-    status_name_alias: Optional[str] = None,
+    user_param: dict,
+    state_data: dict,
+    status_name_alias: str | None = None
 ) -> int:
     """
     Calculates and returns the current status.
@@ -178,8 +230,8 @@ def get_now_status(
 
 
 def get_basic_status(
-    user_param: Dict[str, int], state_data: Dict[str, int]
-) -> Tuple[int, int, int, int, int, int, int]:
+    user_param: dict[str, int], state_data: dict[str, int]
+) -> tuple[int, int, int, int, int, int, int]:
     """
     Get basic status values of a user character.
 
@@ -238,31 +290,6 @@ def build_user_panel(
         ],
     }
 
-
-def write_session_data(team_id, path, content):
-    try:
-        s3_client = boto3.resource('s3')
-        bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
-        obj = bucket.Object(f"{team_id}/{path}")
-        response = obj.put(
-            Body=content,
-            ContentEncoding='utf-8',
-            ContentType='text/plane'
-        )
-    except ClientError as e:
-        print(e)
-
-
-def read_session_data(team_id, path):
-    try:
-        s3_client = boto3.resource('s3')
-        bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
-        obj = bucket.Object(f"{team_id}/{path}")
-        response = obj.get()
-        return response['Body'].read()
-    except ClientError as e:
-        print(e)
-        return None
 
 
 def get_basic_param():

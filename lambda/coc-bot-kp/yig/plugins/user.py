@@ -8,10 +8,9 @@ from yig.bot import listener
 from yig.util.data import (
     get_user_param,
     get_basic_status,
-    get_state_data,
     build_user_panel,
 )
-from yig.util.view import write_pc_image, get_pc_image_url
+from yig.util.view import write_pc_image, get_pc_image_url, write_pc_image_origin
 import yig.config
 
 
@@ -72,7 +71,7 @@ def add_character_image(bot):
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
-
+    
     # Cascadeファイルの読み込み
     face_cascade_path = "xml/lbpcascade_animeface.xml"
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
@@ -83,6 +82,13 @@ def add_character_image(bot):
     response = requests.get(image_url)
     img_array = np.asarray(bytearray(response.content), dtype=np.uint8)
     image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    write_pc_image_origin(
+        guild_id=bot.guild_id,
+        user_id=bot.user_idbot.user_id,
+        pc_id=state_data["pc_id"],
+        image_bytes=image.tobytes()
+    )
 
     # グレースケール変換
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
