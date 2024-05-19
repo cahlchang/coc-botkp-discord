@@ -142,7 +142,10 @@ def roll_dice(bot):
         Responce data.
     """
     # Get user's status information
-    state_data = get_state_data(guild_id=bot.guild_id, user_id=bot.user_id)
+    state_data = read_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+    )
+
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
@@ -188,7 +191,10 @@ def roll_dice(bot):
 
 @listener("sanc")
 def sanity_check(bot):
-    state_data = get_state_data(bot.guild_id, bot.user_id)
+    state_data = read_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+    )
+
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
