@@ -391,12 +391,24 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
                     {
                         "name": f"**{pc_name}**",
                         "value": (
-                            f"**JOB: ** {job}　 **AGE: ** {age}　 **SEX :** {sex}\n"
+                            f"**JOB: ** {job}  **AGE: ** {age}  **SEX :** {sex}\n"
                             + line3
                             + param_message
                         ),
-                    },
-                    {"name": "SKILL", "value": skill_message},
+                    }
+                ],
+                "inline": False,
+                "thumbnail": {
+                    "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"])
+                }
+            },
+            {
+                "type": "rich",
+                "title": "Skill title",
+                "description": "",
+                "color": 0x000000,
+                "fields": [
+                    {"name": "SKILL", "value": skill_message}
                 ],
                 "inline": False,
                 "thumbnail": {
@@ -408,5 +420,5 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
                 #     "width": 200
                 # }
             }
-        ],
+        ]
     }

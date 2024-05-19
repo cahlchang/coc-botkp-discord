@@ -9,6 +9,7 @@ from yig.util.data import (
     get_user_param,
     get_basic_status,
     build_user_panel,
+    read_user_data
 )
 from yig.util.view import write_pc_image, get_pc_image_url, write_pc_image_origin
 import yig.config
@@ -33,7 +34,9 @@ import yig.config
 
 @listener("status")
 def show_status(bot):
-    state_data = get_state_data(bot.guild_id, bot.user_id)
+    state_data = read_user_data(
+        bot.guild_id, bot.user_id, yig.config.STATE_FILE_NAME
+    )
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
@@ -67,7 +70,9 @@ def show_status(bot):
 
 @listener("addimage")
 def add_character_image(bot):
-    state_data = get_state_data(guild_id=bot.guild_id, user_id=bot.user_id)
+    state_data = read_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+        )
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
@@ -100,7 +105,7 @@ def add_character_image(bot):
         )
     except Exception as e:
         print(e)
-        return {"content": "顔の検出に失敗しました。"}
+        raise e
 
     # 検出された顔の領域から正方形を切り出し、リサイズする
     for x, y, w, h in face_rects:
