@@ -31,7 +31,7 @@ def roll_skill(bot):
 
     # Get user's status information
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(
@@ -143,7 +143,7 @@ def roll_dice(bot):
     """
     # Get user's status information
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(
@@ -192,7 +192,7 @@ def roll_dice(bot):
 @listener("sanc")
 def sanity_check(bot):
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(

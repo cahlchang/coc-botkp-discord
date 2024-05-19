@@ -35,7 +35,7 @@ import yig.config
 @listener("status")
 def show_status(bot):
     state_data = read_user_data(
-        bot.guild_id, bot.user_id, yig.config.STATE_FILE_NAME
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
@@ -71,8 +71,8 @@ def show_status(bot):
 @listener("addimage")
 def add_character_image(bot):
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_NAME
-        )
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+    )
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
