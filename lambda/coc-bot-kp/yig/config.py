@@ -1,0 +1,31 @@
+import os
+
+APPLICATION_ID = ""
+AWS_S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME")
+STATE_FILE_PATH = "state.json"
+KP_FILE_PATH = "/kp.json"
+
+
+COLOR_CRITICAL = 15844367
+COLOR_NORMAL_SUCCESS = 16777215
+COLOR_SUCCESS = 5763719
+COLOR_FAILURE = 15548997
+COLOR_FUMBLE = 10181046
+COLOR_ATTENTION = 1752220
+COLOR_INFO = 9369315
+
+LST_USER_STATUS_NAME = [
+    "知識",
+    "アイデア",
+    "幸運",
+    "STR",
+    "CON",
+    "POW",
+    "DEX",
+    "APP",
+    "SIZ",
+    "INT",
+    "EDU",
+    "HP",
+    "MP",
+]
