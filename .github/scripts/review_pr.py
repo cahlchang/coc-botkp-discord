@@ -44,7 +44,7 @@ response = client.chat.completions.create(
     ]
 )
 
-review_comment = response['choices'][0]['message']['content']
+review_comment = response.choices[0].message.content
 
 # Post review comment on GitHub
 review_url = f'https://api.github.com/repos/{GITHUB_REPOSITORY}/pulls/{pr_number}/reviews'
