@@ -1,6 +1,6 @@
 import os
 import json
-import openai
+from openai import OpenAI
 import requests
 
 # GitHub environment variables
@@ -34,13 +34,15 @@ for file in files:
     diff_text += f'File: {filename}\n{patch}\n\n'
 
 # Request review from ChatGPT
-response = openai.ChatCompletion.create(
+client = OpenAI()
+
+response = client.chat.completions.create(
     model=openai_model,
+    response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": f"{review_prompt}\n\n{diff_text}"}
-    ],
-    max_tokens=500
+    ]
 )
 
 review_comment = response['choices'][0]['message']['content']
