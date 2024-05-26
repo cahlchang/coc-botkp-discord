@@ -56,6 +56,8 @@ headers = {
     'Authorization': f'token {GITHUB_TOKEN}',
     'Accept': 'application/vnd.github.v3+json'
 }
-res = requests.post(review_url, headers=headers, json=review_data)
-print(res.code)
-print(res.text)
+post_response = requests.post(review_url, headers=headers, json=review_data)
+
+# レスポンスのステータスコードと内容を出力
+print(f'Status Code: {post_response.status_code}')
+print(f'Response: {post_response.json()}')
