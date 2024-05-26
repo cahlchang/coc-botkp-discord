@@ -391,7 +391,7 @@ def judge_1d100_with_6_ver(target: int, dice: int) -> tuple[str, str]:
     return "失敗", yig.config.COLOR_FAILURE
 
 
-def judge_1d100_with_7_ver(target: int, dice: int):
+def judge_1d100_with_7_ver(target: int, dice: int) -> tuple[str, str]:
     """
     Judge the 1d100 dice result and return a tuple of a value and the color for value.
 
@@ -477,7 +477,7 @@ def split_alternative_roll_or_value(cmd) -> tuple[str, str]:
     element_matcher = r"(\d+D?\d*)"
     result = re.fullmatch(f"{element_matcher}/{element_matcher}", cmd.upper())
     if result is None or len(result.groups()) != 2:
-        return None
+        return None, None
     return result.groups()
 
 

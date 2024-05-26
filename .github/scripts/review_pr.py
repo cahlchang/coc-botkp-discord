@@ -1,7 +1,8 @@
 import os
 import json
-from openai import OpenAI
 import requests
+from openai import OpenAI
+
 
 # GitHub environment variables
 GITHUB_REPOSITORY = os.getenv('GITHUB_REPOSITORY')
@@ -12,6 +13,9 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 client = OpenAI(
   api_key=os.getenv('OPENAI_API_KEY'),
 )
+
+if not all([GITHUB_REPOSITORY, GITHUB_EVENT_PATH, GITHUB_TOKEN, client.api_key]):
+    raise EnvironmentError("No Environment")
 
 # Model and prompt settings
 openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
@@ -26,6 +30,7 @@ pr_number = event['pull_request']['number']
 url = f'https://api.github.com/repos/{GITHUB_REPOSITORY}/pulls/{pr_number}/files'
 headers = {'Authorization': f'token {GITHUB_TOKEN}'}
 response = requests.get(url, headers=headers)
+response.raise_for_status()
 files = response.json()
 
 # Summarize the changes
@@ -36,15 +41,18 @@ for file in files:
     diff_text += f'File: {filename}\n{patch}\n\n'
 
 # Request review from ChatGPT
-response = client.chat.completions.create(
-    model=openai_model,
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": f"{review_prompt}\n\n{diff_text}"}
-    ]
-)
+try:
+    response = client.chat.completions.create(
+        model=openai_model,
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"{review_prompt}\n\n{diff_text}"}
+        ]
+    )
 
-review_comment = response.choices[0].message.content
+    review_comment = response.choices[0].message.content
+except Exception as e:
+    raise e
 
 # Post review comment on GitHub
 review_url = f'https://api.github.com/repos/{GITHUB_REPOSITORY}/pulls/{pr_number}/reviews'
@@ -56,8 +64,5 @@ headers = {
     'Authorization': f'token {GITHUB_TOKEN}',
     'Accept': 'application/vnd.github.v3+json'
 }
-post_response = requests.post(review_url, headers=headers, json=review_data)
-
-# レスポンスのステータスコードと内容を出力
-print(f'Status Code: {post_response.status_code}')
-print(f'Response: {post_response.json()}')
+response = requests.post(review_url, headers=headers, json=review_data)
+response.raise_for_status()
