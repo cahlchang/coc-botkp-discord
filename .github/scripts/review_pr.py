@@ -56,4 +56,6 @@ headers = {
     'Authorization': f'token {GITHUB_TOKEN}',
     'Accept': 'application/vnd.github.v3+json'
 }
-requests.post(review_url, headers=headers, json=review_data)
+res = requests.post(review_url, headers=headers, json=review_data)
+print(res.code)
+print(res.text)
