@@ -38,7 +38,6 @@ for file in files:
 # Request review from ChatGPT
 response = client.chat.completions.create(
     model=openai_model,
-    response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": f"{review_prompt}\n\n{diff_text}"}
