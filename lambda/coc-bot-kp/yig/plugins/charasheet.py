@@ -334,7 +334,7 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
     sorted_skill_data = sorted(skill_data.items(), key=lambda x: x[1], reverse=True)
     # image_url = get_pc_image_url(guild_id, user_id, pc_id, state_data['ts'])
     skill_message = ""
-    #TODO write session data
+    #TODO write session data このあとすぐ対応
     #write_session_data
 
     def get_east_asian_width_count(text):

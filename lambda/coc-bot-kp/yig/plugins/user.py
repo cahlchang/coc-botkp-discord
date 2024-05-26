@@ -69,7 +69,18 @@ def show_status(bot):
 
 
 @listener("addimage")
-def add_character_image(bot):
+def add_character_image(bot)->dict:
+    """character image
+
+    Args:
+        bot yig.Bot: Bot instance
+
+    Raises:
+        e: No face
+
+    Returns:
+        dict: return value
+    """
     state_data = read_user_data(
         guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )

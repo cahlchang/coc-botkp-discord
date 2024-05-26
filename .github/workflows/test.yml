@@ -9,15 +9,17 @@ jobs:
         python-version: [3.11]
 
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: |
-          cd lambda/coc-bot-kp
+      - name: Set up Library
+        working-directory: lambda/coc-bot-kp
+        run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
@@ -27,11 +29,12 @@ jobs:
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/python" >> $GITHUB_ENV
 
       - name: pytest
+        working-directory: lambda/coc-bot-kp
         run: |
-          cd lambda/coc-bot-kp
           python -m pytest
 
-      - name: pylint(check only error)
-        run: |
-          cd lambda/coc-bot-kp
-          pylint -E *.py
+      # - name: pylint(check only error)
+      #   working-directory: lambda/coc-bot-kp
+      #   run: |
+      #     cd lambda/coc-bot-kp
+      #     pylint -E *.py

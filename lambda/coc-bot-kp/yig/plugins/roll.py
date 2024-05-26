@@ -254,7 +254,7 @@ def analysis_roll_and_calculation(value: str) -> tuple[str, str, int]:
 
     Returns
     -------
-    Tuple[str, str, int, str]
+    tuple[str, str, int, str]
         A tuple containing the roll, the operator, the operand, and the difficulty rating.
 
     Notes
