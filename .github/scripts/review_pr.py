@@ -9,7 +9,9 @@ GITHUB_EVENT_PATH = os.getenv('GITHUB_EVENT_PATH')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 # OpenAI API key
-openai.api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(
+  api_key=os.getenv('OPENAI_API_KEY'),
+)
 
 # Model and prompt settings
 openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
@@ -34,8 +36,6 @@ for file in files:
     diff_text += f'File: {filename}\n{patch}\n\n'
 
 # Request review from ChatGPT
-client = OpenAI()
-
 response = client.chat.completions.create(
     model=openai_model,
     response_format={ "type": "json_object" },
