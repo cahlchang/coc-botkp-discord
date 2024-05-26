@@ -112,6 +112,10 @@ def remove_user_data(guild_id: str, user_id: str, filename: str) -> bool:
     return True
 
 
+
+def add_session_result(guild_id: str, channel_id: str ,user_id: str):
+    pass
+
 def write_session_data(guild_id: str, path: str, content:dict):
     """
     Write session data to the S3 bucket.

@@ -11,7 +11,8 @@ from yig.util.data import (
     write_user_data,
     get_basic_status,
     get_user_param,
-    get_now_status
+    get_now_status,
+    write_session_data
 )
 
 # from yig.util.data import get_state_data, remove_state_data, write_user_data, get_status_message,  get_user_param, get_now_status
@@ -333,6 +334,8 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
     sorted_skill_data = sorted(skill_data.items(), key=lambda x: x[1], reverse=True)
     # image_url = get_pc_image_url(guild_id, user_id, pc_id, state_data['ts'])
     skill_message = ""
+    #TODO write session data
+    #write_session_data
 
     def get_east_asian_width_count(text):
         count = 0

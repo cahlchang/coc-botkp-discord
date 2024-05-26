@@ -1,0 +1,37 @@
+on: push
+name: test
+jobs:
+  gitHubActionForPytest:
+    name: GitHub Action for pytest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: |
+          cd lambda/coc-bot-kp
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install --platform manylinux2014_x86_64 --target . --python-version 3.11 --only-binary=:all: --upgrade  Pillow
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/python" >> $GITHUB_ENV
+
+      - name: pytest
+        run: |
+          cd lambda/coc-bot-kp
+          python -m pytest
+
+      - name: pylint(check only error)
+        run: |
+          cd lambda/coc-bot-kp
+          pylint -E *.py

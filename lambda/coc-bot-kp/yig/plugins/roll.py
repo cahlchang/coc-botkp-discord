@@ -2,11 +2,10 @@ import re
 import random
 import math
 import json
-from typing import List, Tuple, Dict
 
 
 from yig.bot import listener
-from yig.util.data import get_user_param, get_basic_status, read_user_data, read_session_data
+from yig.util.data import get_user_param, get_basic_status, read_user_data, add_session_result
 
 # set_state_data,
 from yig.util.view import get_pc_image_url
@@ -38,6 +37,7 @@ def roll_skill(bot):
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
 
+    print(bot.action_data)
     # Analyze parameters from bot's value
     roll, operant, num_arg = analysis_roll_and_calculation(
         value=bot.action_data["options"][0]["value"]
@@ -74,7 +74,9 @@ def roll_skill(bot):
             target=num_targ, dice=num_rand
         )
 
-    raw_session_data = read_session_data(bot.team_id, "%s/%s.json" % (bot.channel_name ,state_data["pc_id"]))
+    # add_session_result(
+    #     guild_id=bot.guild_id, channel_id=bot.channel_id ,user_id=bot.user_id, {roll}
+    # )
     # if raw_session_data:
     #     session_data = json.loads(raw_session_data)
     #     session_data.append({"roll": roll.upper(),
@@ -241,7 +243,7 @@ def sanity_check(bot):
     return return_obj
 
 
-def analysis_roll_and_calculation(value: str) -> Tuple[str, str, int]:
+def analysis_roll_and_calculation(value: str) -> tuple[str, str, int]:
     """
     Analyze a roll value and extract its components for calculation.
 
@@ -309,7 +311,7 @@ def calculation(number_x: int, operant: str, number_y: int) -> int:
     return op_dict[operant](number_x, number_y)
 
 
-def eval_roll_or_value(text: str) -> List[int]:
+def eval_roll_or_value(text: str) -> list[int]:
     try:
         return [int(text)]
     except ValueError:
@@ -324,7 +326,7 @@ def eval_roll_or_value(text: str) -> List[int]:
         )
 
 
-def create_post_message_rolls_result(key: str) -> Tuple[str, str, int]:
+def create_post_message_rolls_result(key: str) -> tuple[str, str, int]:
     # ダイスロールと数値、演算子を抽出する正規表現パターン
     pattern = re.compile(r"(\d+[dD]\d+|\d+)|([-+])")
     items = pattern.findall(key)
@@ -362,7 +364,7 @@ def create_post_message_rolls_result(key: str) -> Tuple[str, str, int]:
     return str_message.strip(), str_detail.strip(), sum_result
 
 
-def judge_1d100_with_6_ver(target: int, dice: int) -> Tuple[str, str]:
+def judge_1d100_with_6_ver(target: int, dice: int) -> tuple[str, str]:
     """
     Judge 1d100 dice result, and return text and color for value.
     Result is critical, success, failure or fumble.
@@ -429,7 +431,7 @@ def judge_1d100_with_7_ver(target: int, dice: int):
     return "成功", yig.config.COLOR_NORMAL_SUCCESS
 
 
-def get_sanc_result(data: Dict, pc_san: int) -> Tuple[str, str, str]:
+def get_sanc_result(data: dict, pc_san: int) -> tuple[str, str, str]:
     """
     Check SAN and return result message and color.
     Arguments:
@@ -460,7 +462,7 @@ def get_sanc_result(data: Dict, pc_san: int) -> Tuple[str, str, str]:
     return message, color, reduce_message
 
 
-def split_alternative_roll_or_value(cmd) -> Tuple[str, str]:
+def split_alternative_roll_or_value(cmd) -> tuple[str, str]:
     """
     Split text 2 roll or value.
     Alternative roll is like following.
@@ -479,7 +481,7 @@ def split_alternative_roll_or_value(cmd) -> Tuple[str, str]:
     return result.groups()
 
 
-def roll_or_parse_dice(text: str) -> List[int]:
+def roll_or_parse_dice(text: str) -> list[int]:
     """
     Roll one or more dice or parse a single number from a text string.
 
@@ -527,7 +529,7 @@ def roll_or_parse_dice(text: str) -> List[int]:
     return roll_dice(dice_count, dice_type)
 
 
-def roll_dice(dice_count: int, dice_type: int) -> List[int]:
+def roll_dice(dice_count: int, dice_type: int) -> list[int]:
     """
     Get multiple and various dice roll result.
     ex) `roll_dice(2, 6)` means 2D6 and return each result like [2, 5].

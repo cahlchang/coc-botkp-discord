@@ -76,7 +76,7 @@ def add_character_image(bot):
     user_param = get_user_param(
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
-    
+
     # Cascadeファイルの読み込み
     face_cascade_path = "xml/lbpcascade_animeface.xml"
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
@@ -90,7 +90,7 @@ def add_character_image(bot):
 
     write_pc_image_origin(
         guild_id=bot.guild_id,
-        user_id=bot.user_idbot.user_id,
+        user_id=bot.user_id,
         pc_id=state_data["pc_id"],
         image_bytes=image.tobytes()
     )
