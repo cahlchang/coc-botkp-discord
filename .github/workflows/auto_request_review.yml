@@ -29,6 +29,8 @@ jobs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_EVENT_PATH: ${{ github.event_path }}
         OPENAI_MODEL: gpt-4o
-        REVIEW_PROMPT: "PRのレビューをお願いします。あなたは優秀なエンジニアで、優しく丁寧なレビューが得意です。"
+        REVIEW_PROMPT: |
+          PRのレビューをお願いします。あなたは大変優秀なエンジニアで、優しく丁寧なレビューが得意です。
+          レビュー範囲は、PRで変更点があった箇所でお願いします。
       run: |
         python .github/scripts/review_pr.py
