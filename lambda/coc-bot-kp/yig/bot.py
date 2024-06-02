@@ -89,12 +89,12 @@ class Bot(object):
             import_module(".".join(module.split("/")))
 
     def init_param(self):
-        self._channel_id = urllib.parse.unquote(self.interaction["channel_id"])
-        self._guild_id = urllib.parse.unquote(self.interaction["guild_id"])
-        self._user_id = urllib.parse.unquote(self.interaction["member"]["user"]["id"])
+        self._channel_id = urllib.parse.unquote(self._interaction["channel_id"])
+        self._guild_id = urllib.parse.unquote(self._interaction["guild_id"])
+        self._user_id = urllib.parse.unquote(self._interaction["member"]["user"]["id"])
 
-        self._action_name = urllib.parse.unquote_plus(self.interaction["data"]["name"])
-        self._action_data = self.interaction["data"]
+        self._action_name = urllib.parse.unquote_plus(self._interaction["data"]["name"])
+        self._action_data = self._interaction["data"]
 
     @property
     def channel_id(self):

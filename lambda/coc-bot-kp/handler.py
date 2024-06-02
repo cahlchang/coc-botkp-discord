@@ -24,8 +24,14 @@ def run(event, lambda_context):
     headers = {k.lower(): v for k, v in event["headers"].items()}
     req = json.loads(event["body"])
     load_dotenv(".env")
+
     APPLICATION_PUBLIC_KEY = os.environ.get("APPLICATION_PUBLIC_KEY")
+    if not APPLICATION_PUBLIC_KEY:
+        raise ValueError("Environment variable 'APPLICATION_PUBLIC_KEY' is not set")
     BOT_TOKEN = os.environ.get("TOKEN")
+    if not BOT_TOKEN:
+        raise ValueError("Environment variable 'TOKEN' is not set")
+
     bot = Bot(APPLICATION_PUBLIC_KEY, BOT_TOKEN, req)
     if not bot.verify(
         headers.get("x-signature-ed25519"),
