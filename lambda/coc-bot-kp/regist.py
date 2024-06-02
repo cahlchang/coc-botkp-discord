@@ -89,5 +89,5 @@ if __name__ == "__main__":
     for command in commands:
         response = requests.post(ApiEndpoint, data=json.dumps(command), headers=headers)
         print(response.status_code)
-0-0        print(response.text)
+        print(response.text)
         time.sleep(2)
