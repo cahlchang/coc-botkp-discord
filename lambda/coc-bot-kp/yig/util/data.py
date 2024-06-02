@@ -1,5 +1,6 @@
 import json
 import boto3
+import requests
 from botocore.exceptions import ClientError
 
 import yig.config
@@ -344,3 +345,59 @@ def build_detail_user_panel(
         ],
     }
 
+
+def create_new_channel(bot_token: str, guild_id: str, user_id: str, name: str) -> str:
+    """
+    Creates a new channel in a Discord guild.
+
+    Args:
+        bot_token (str): The bot token with appropriate permissions to create channels.
+        guild_id (str): The ID of the guild where the channel will be created.
+        user_id (str): The ID of the user who will have specific permissions in the channel.
+        name (str): The name of the channel to be created.
+
+    Returns:
+        str: A message indicating the success or failure of channel creation.
+
+    Notes:
+        - The channel type is set to 0, indicating a text channel.
+        - By default, the channel will have a topic set to 'topic'.
+        - The user specified by 'user_id' will have read messages permission (1024) in the channel,
+          while other users in the guild will have this permission denied.
+        - If the channel creation is successful, returns a message indicating success.
+          If unsuccessful, returns a message indicating failure along with the status code and response details.
+    """
+    url = f'https://discord.com/api/v10/guilds/{guild_id}/channels'
+
+    headers = {
+        'Authorization': f'Bot {bot_token}',
+        'Content-Type': 'application/json'
+    }
+
+    data = {
+        'name': name,
+        'type': 0,
+        'topic': 'topic',
+        'permission_overwrites': [
+            {
+                'id': guild_id,
+                'type': 0,
+                'deny': '1024'
+            },
+            {
+                'id': user_id,
+                'type': 1,
+                'allow': '1024'
+            }
+        ]
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 201:
+        print(response.json())
+    else:
+        print(f"ステータスコード: {response.status_code}")
+        print(response.json())
+        return 'チャンネルの作成に失敗しました'
+
+    return 'チャンネルが作成されました'

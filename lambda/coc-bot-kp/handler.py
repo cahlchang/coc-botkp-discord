@@ -25,7 +25,8 @@ def run(event, lambda_context):
     req = json.loads(event["body"])
     load_dotenv(".env")
     APPLICATION_PUBLIC_KEY = os.environ.get("APPLICATION_PUBLIC_KEY")
-    bot = Bot(APPLICATION_PUBLIC_KEY, req)
+    BOT_TOKEN = os.environ.get("TOKEN")
+    bot = Bot(APPLICATION_PUBLIC_KEY, BOT_TOKEN, req)
     if not bot.verify(
         headers.get("x-signature-ed25519"),
         headers.get("x-signature-timestamp"),

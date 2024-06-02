@@ -10,10 +10,11 @@ command_manager: list = []
 
 
 class Bot(object):
-    def __init__(self, APPLICATION_PUBLIC_KEY, req):
+    def __init__(self, APPLICATION_PUBLIC_KEY, token ,req):
         self.verify_key = VerifyKey(bytes.fromhex(APPLICATION_PUBLIC_KEY))
         self.HEADERS = {"Content-Type": "application/json"}
-        self.interaction = req
+        self._interaction = req
+        self._bot_token = token
         self.init_plugins()
 
     def verify(self, signature: str, timestamp: str, event: str) -> bool:
@@ -88,12 +89,40 @@ class Bot(object):
             import_module(".".join(module.split("/")))
 
     def init_param(self):
-        self.channel_id = urllib.parse.unquote(self.interaction["channel_id"])
-        self.guild_id = urllib.parse.unquote(self.interaction["guild_id"])
-        self.user_id = urllib.parse.unquote(self.interaction["member"]["user"]["id"])
+        self._channel_id = urllib.parse.unquote(self.interaction["channel_id"])
+        self._guild_id = urllib.parse.unquote(self.interaction["guild_id"])
+        self._user_id = urllib.parse.unquote(self.interaction["member"]["user"]["id"])
 
-        self.action_name = urllib.parse.unquote_plus(self.interaction["data"]["name"])
-        self.action_data = self.interaction["data"]
+        self._action_name = urllib.parse.unquote_plus(self.interaction["data"]["name"])
+        self._action_data = self.interaction["data"]
+
+    @property
+    def channel_id(self):
+        return self._channel_id
+
+    @property
+    def guild_id(self):
+        return self._guild_id
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @property
+    def action_name(self):
+        return self._action_name
+
+    @property
+    def action_data(self):
+        return self._action_data
+
+    @property
+    def interaction(self):
+        return self._interaction
+
+    @property
+    def bot_token(self):
+        return self._bot_token
 
     async def process_and_respond_interaction(self, dispatch_function):
         interactive_id = self.interaction["id"]

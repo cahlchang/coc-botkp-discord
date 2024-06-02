@@ -38,21 +38,21 @@ if __name__ == "__main__":
     commands.append(build_command_data(name="cc",
                                     description="coc roll action",
                                     options_name="action",
-                                    options_description="The name of the skill to execute",
+                                    options_description="the name of the skill to execute",
                                     options_type=3,
                                     options_required=True))
 
     commands.append(build_command_data(name="init",
                                     description="init action",
                                     options_name="action",
-                                    options_description="The URL of the character sheet for initializing the character",
+                                    options_description="the url of the character sheet for initializing the character",
                                     options_type=3,
                                     options_required=False))
 
     commands.append(build_command_data(name="sanc",
-                                    description="SAN Check Action",
+                                    description="san check action",
                                     options_name="value",
-                                    options_description="The amount of SAN reduction for successful and failed SAN checks",
+                                    options_description="the amount of san reduction for successful and failed san checks",
                                     options_type=3,
                                     options_required=False))
 
@@ -71,11 +71,19 @@ if __name__ == "__main__":
                                     options_required=True))
 
     commands.append(build_command_data(name="dice",
-                                    description="DICE Roll",
+                                    description="dice roll",
                                     options_name="value",
                                     options_description="dice type and number(example 3d10)",
                                     options_type=3,
                                     options_required=False))
+
+    commands.append(build_command_data(name="start-session",
+                                    description="start coc game session",
+                                    options_name="session-name",
+                                    options_description="please enter the name of the session you are about to start",
+                                    options_type=3,
+                                    options_required=True))
+    
     commands.append(build_single_command_data(name="reload", description="reload the character sheet"))
     commands.append(build_single_command_data(name="status", description="show status"))
 
