@@ -84,9 +84,6 @@ def add_character_image(bot)->dict:
     state_data = read_user_data(
         guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
-    user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
-    )
 
     # Cascadeファイルの読み込み
     face_cascade_path = "xml/lbpcascade_animeface.xml"
@@ -118,28 +115,35 @@ def add_character_image(bot)->dict:
         print(e)
         raise e
 
-    # 検出された顔の領域から正方形を切り出し、リサイズする
-    for x, y, w, h in face_rects:
-        print("face find")
-        # 顔の周りを取得する
-        x1 = max(x - w // 2, 0)
-        y1 = max(y - h // 2, 0)
-        x2 = min(x + 3 * w // 2, image.shape[1])
-        y2 = min(y + 3 * h // 2, image.shape[0])
+    if face_rects:
+        for x, y, w, h in face_rects:
+            print("face find")
+            # 顔の周りを取得する
+            x1 = max(x - w // 2, 0)
+            y1 = max(y - h // 2, 0)
+            x2 = min(x + 3 * w // 2, image.shape[1])
+            y2 = min(y + 3 * h // 2, image.shape[0])
 
-        # 顔の周りを切り出す
-        face_area = image[y1:y2, x1:x2]
-        # 顔画像をリサイズする
-        face_size = 256
-        face_square = cv2.resize(
-            face_area, (face_size, face_size), interpolation=cv2.INTER_AREA
-        )
+            # 顔の周りを切り出す
+            face_area = image[y1:y2, x1:x2]
+            # 顔画像をリサイズする
+            face_size = 256
+            face_square = cv2.resize(
+                face_area, (face_size, face_size), interpolation=cv2.INTER_AREA
+            )
 
+            write_pc_image(
+                bot.guild_id,
+                bot.user_id,
+                state_data["pc_id"],
+                cv2.imencode(".jpg", face_square)[1].tobytes(),
+            )
+    else:
         write_pc_image(
             bot.guild_id,
             bot.user_id,
             state_data["pc_id"],
-            cv2.imencode(".jpg", face_square)[1].tobytes(),
+            cv2.imencode(".jpg", image)[1].tobytes(),
         )
 
     tz = datetime.timezone.utc

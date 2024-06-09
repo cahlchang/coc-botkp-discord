@@ -39,7 +39,6 @@ def write_pc_image_origin(guild_id, user_id, pc_id, image_bytes):
 
 
 def get_pc_image_url(guild_id, user_id, pc_id, ts) -> str:
-    print("pc image called")
     url = f"https://d2ictenzfe6sat.cloudfront.net/{guild_id}/{user_id}/{pc_id}_thum.jpg?{ts}"
     response = requests.head(url)
     print(response.status_code)
