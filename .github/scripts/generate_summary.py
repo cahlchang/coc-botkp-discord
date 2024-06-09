@@ -19,7 +19,7 @@ def generate_summary():
         temperature=0.5,
     )
 
-    summary = response.choices[0].text.strip()
+    summary = response.choices[0].message.content.strip()
 
     print(f"::set-output name=summary::{summary}")
 
