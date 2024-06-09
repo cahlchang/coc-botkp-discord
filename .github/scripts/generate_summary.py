@@ -4,7 +4,6 @@ import subprocess
 
 def get_all_commit_details():
     try:
-        # すべてのコミットメッセージを取得
         commit_messages = subprocess.run(
             ["git", "log", "--pretty=format:%s"],
             check=True,
@@ -12,8 +11,7 @@ def get_all_commit_details():
             stderr=subprocess.PIPE,
             text=True
         ).stdout.strip()
-        
-        # すべてのコミットの差分を取得
+
         commit_diff = subprocess.run(
             ["git", "diff", "origin/main...HEAD"],
             check=True,
@@ -21,7 +19,7 @@ def get_all_commit_details():
             stderr=subprocess.PIPE,
             text=True
         ).stdout
-        
+
         return commit_messages, commit_diff
     except subprocess.CalledProcessError as e:
         print(f"Error getting commit details: {e.stderr}")
@@ -36,7 +34,7 @@ def generate_summary():
     prompt = "最近のコミットに基づいてプルリクエストの概要を生成してください。"
 
     commit_messages, commit_diff = get_all_commit_details()
-    prompt = f"以下のコミットメッセージと変更内容に基づいてプルリクエストの概要を生成してください。\n\nコミットメッセージ:\n{commit_messages}\n\n変更内容:\n{commit_diff}"
+    prompt = f"以下のコミットメッセージと変更内容に基づいてプルリクエストの概要を生成してください。またGitHubマークダウン記法でわかりやすくしてください。\n\nコミットメッセージ:\n{commit_messages}\n\n変更内容:\n{commit_diff}"
 
 
     response = client.chat.completions.create(
@@ -50,9 +48,9 @@ def generate_summary():
     )
 
     summary = response.choices[0].message.content.strip()
-    summary_safe = summary.replace('\n', '%0A').replace('\r', '%0D')
+#    summary_safe = summary.replace('\n', '%0A').replace('\r', '%0D')
     with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-        env_file.write(f"SUMMARY={summary_safe}\n")
+        env_file.write(f'SUMMARY="{summary_safe}"\n')
 
 if __name__ == "__main__":
     try:
