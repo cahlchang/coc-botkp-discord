@@ -54,7 +54,7 @@ jobs:
       id: generate_summary
       if: steps.check_branch.outputs.is_new_branch == 'true'
       run: |
-        python .github/scripts/generate_summary.py >> $GITHUB_OUTPUT
+        python .github/scripts/generate_summary.py
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_MODEL: gpt-4o
