@@ -51,10 +51,10 @@ jobs:
       run: sudo apt-get install gh -y
 
     - name: Run script to generate PR summary
+      id: summary
       if: steps.check_branch.outputs.is_new_branch == 'true'
-      id: generate_summary
       run: |
-        python .github/scripts/generate_summary.py
+        python .github/scripts/generate_summary.py >> $GITHUB_OUTPUT
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_MODEL: gpt-4o
@@ -68,6 +68,6 @@ jobs:
 
     - name: Create Pull Request
       run: |
-        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ env.SUMMARY }}"
+        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ steps.summary.outputs.summary }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
