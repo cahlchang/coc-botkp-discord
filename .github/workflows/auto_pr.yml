@@ -1,45 +1,54 @@
-name: Auto PR on Push
+name: Auto PR on New Branch Push
 
 on:
-  create:
+  push:
     branches:
-        - '**'
+      - '**'
 
 jobs:
   create-pull-request:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Check if branch is new
+      id: check_branch
+      run: |
+        git fetch origin
+        BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
+        if git rev-list --max-parents=0 HEAD..origin/$BRANCH_NAME | grep .; then
+          echo "::set-output name=is_new_branch::false"
+        else
+          echo "::set-output name=is_new_branch::true"
+        fi
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      if: steps.check_branch.outputs.is_new_branch == 'true'
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: '3.11'
 
     - name: Cache pip
-      uses: actions/cache@v2
+      if: steps.check_branch.outputs.is_new_branch == 'true'
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Check cache hit
-      run: |
-        if [ ${{ steps.cache-pip.outputs.cache-hit }} == 'true' ]; then
-          echo "Cache was hit!";
-        else
-          echo "Cache was missed.";
-        fi
-
     - name: Install dependencies
+      if: steps.check_branch.outputs.is_new_branch == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install openai
 
     - name: Run script to generate PR summary
+      if: steps.check_branch.outputs.is_new_branch == 'true'
       id: generate_summary
       run: |
         python .github/scripts/generate_summary.py
@@ -48,6 +57,7 @@ jobs:
         OPENAI_MODEL: gpt-4o
 
     - name: Create Pull Request
+      if: steps.check_branch.outputs.is_new_branch == 'true'
       uses: peter-evans/create-pull-request@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
