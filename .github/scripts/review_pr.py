@@ -48,7 +48,7 @@ try:
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": f"{review_prompt}\n\n{diff_text}"}
         ],
-        max_tokens=100
+        max_tokens=500
     )
 
     review_comment = response.choices[0].message.content
