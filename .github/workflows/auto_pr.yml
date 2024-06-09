@@ -62,8 +62,8 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: Automated PR creation
-        branch: auto-pr-branch
+        branch: ${GITHUB_REF#refs/heads/}
         title: Automated Pull Request
-        body: ${{ steps.generate_summary.outputs.summary }}
+        body: ${{ env.SUMMARY }}
         labels: |
           automated-pr

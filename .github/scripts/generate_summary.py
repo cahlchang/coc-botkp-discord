@@ -20,8 +20,8 @@ def generate_summary():
     )
 
     summary = response.choices[0].message.content.strip()
-
-    print(f"::set-output name=summary::{summary}")
+    with open(os.environ['GITHUB_ENV'], 'a') as env_file:
+        env_file.write(f"SUMMARY={summary}\n")
 
 if __name__ == "__main__":
     try:
