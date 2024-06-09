@@ -1,5 +1,31 @@
 import os
 from openai import OpenAI
+import subprocess
+
+def get_all_commit_details():
+    try:
+        # すべてのコミットメッセージを取得
+        commit_messages = subprocess.run(
+            ["git", "log", "--pretty=format:%s"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        ).stdout.strip()
+        
+        # すべてのコミットの差分を取得
+        commit_diff = subprocess.run(
+            ["git", "diff", "origin/main...HEAD"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        ).stdout
+        
+        return commit_messages, commit_diff
+    except subprocess.CalledProcessError as e:
+        print(f"Error getting commit details: {e.stderr}")
+        return "", ""
 
 def generate_summary():
     client = OpenAI(
@@ -9,13 +35,17 @@ def generate_summary():
     engine = os.getenv("OPENAI_MODEL")
     prompt = "最近のコミットに基づいてプルリクエストの概要を生成してください。"
 
+    commit_messages, commit_diff = get_all_commit_details()
+    prompt = f"以下のコミットメッセージと変更内容に基づいてプルリクエストの概要を生成してください。\n\nコミットメッセージ:\n{commit_messages}\n\n変更内容:\n{commit_diff}"
+
+
     response = client.chat.completions.create(
         model=engine,
         messages=[
             {"role": "system", "content": "You are a helpful assistant specializing in generating pull request summaries based on recent commits."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=100,
+        max_tokens=300,
         temperature=0.5,
     )
 
