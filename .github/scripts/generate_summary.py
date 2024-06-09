@@ -49,7 +49,7 @@ def generate_summary():
 
     summary = response.choices[0].message.content.strip()
     with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
-        output_file.write(f"summary<<EOF{summary}EOF>>")
+        output_file.write(f"summary<<EOF\n{summary}\nEOF")
 #    summary_safe = summary.replace('\n', '%0A').replace('\r', '%0D')
     # with open(os.environ['GITHUB_ENV'], 'a') as env_file:
     #     env_file.write(f'SUMMARY="{summary}"\n')
