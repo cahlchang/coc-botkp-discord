@@ -1,13 +1,15 @@
-import openai
 import os
+from openai import OpenAI
 
 def generate_summary():
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    engine = os.getenv("OPENAI_MODEL")
+    client = OpenAI(
+        api_key=os.getenv('OPENAI_API_KEY'),
+    )
 
+    engine = os.getenv("OPENAI_MODEL")
     prompt = "最近のコミットに基づいてプルリクエストの概要を生成してください。"
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=engine,
         messages=[
             {"role": "system", "content": "You are a helpful assistant specializing in generating pull request summaries based on recent commits."},
