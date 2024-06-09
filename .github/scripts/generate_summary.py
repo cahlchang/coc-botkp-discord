@@ -5,7 +5,7 @@ def generate_summary():
     openai.api_key = os.getenv("OPENAI_API_KEY")
     engine = os.getenv("OPENAI_MODEL")
     
-    prompt = "Generate a summary for a pull request based on the recent commits."
+    prompt = "最近のコミットに基づいてプルリクエストの概要を生成してください。"
     
     response = openai.Completion.create(
         engine=engine,

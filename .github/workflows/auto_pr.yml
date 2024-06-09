@@ -1,9 +1,9 @@
 name: Auto PR on Push
 
 on:
-  push:
+  create:
     branches:
-      - main  # 変更を検知するブランチ
+      - '**'
 
 jobs:
   create-pull-request:
@@ -18,18 +18,26 @@ jobs:
       with:
         python-version: 3.11
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install openai
-
     - name: Cache pip
       uses: actions/cache@v2
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+
+    - name: Check cache hit
+      run: |
+        if [ ${{ steps.cache-pip.outputs.cache-hit }} == 'true' ]; then
+          echo "Cache was hit!";
+        else
+          echo "Cache was missed.";
+        fi
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install openai
 
     - name: Run script to generate PR summary
       id: generate_summary
