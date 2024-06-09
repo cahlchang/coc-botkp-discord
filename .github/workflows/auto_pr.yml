@@ -56,13 +56,17 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_MODEL: gpt-4o
 
+    - name: Extract branch name
+      id: extract_branch
+      run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
     - name: Create Pull Request
       if: steps.check_branch.outputs.is_new_branch == 'true'
       uses: peter-evans/create-pull-request@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: Automated PR creation
-        branch: main
+        branch: ${{ env.branch_name }}
+        base: main
         title: Automated Pull Request
         body: ${{ env.SUMMARY }}
         labels: |
