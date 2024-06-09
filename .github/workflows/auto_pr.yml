@@ -47,6 +47,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install openai
 
+    - name: Install GitHub CLI
+      run: sudo apt-get install gh -y
+  
     - name: Run script to generate PR summary
       if: steps.check_branch.outputs.is_new_branch == 'true'
       id: generate_summary
@@ -61,13 +64,8 @@ jobs:
       run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
     - name: Create Pull Request
-      if: steps.check_branch.outputs.is_new_branch == 'true'
-      uses: peter-evans/create-pull-request@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ env.branch_name }}
-        base: main
-        title: Automated Pull Request
-        body: ${{ env.SUMMARY }}
-        labels: |
-          automated-pr
+      run: |
+        gh auth login --with-token <<< ${{ secrets.GITHUB_TOKEN }}
+        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ env.SUMMARY }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
