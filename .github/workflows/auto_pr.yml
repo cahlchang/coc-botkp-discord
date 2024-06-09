@@ -45,25 +45,29 @@ jobs:
       if: steps.check_branch.outputs.is_new_branch == 'true'
       run: |
         python -m pip install --upgrade pip
-        pip install openai
+        pip install openai requests
+
+    - name: Install GitHub CLI
+      run: sudo apt-get install gh -y
 
     - name: Run script to generate PR summary
-      if: steps.check_branch.outputs.is_new_branch == 'true'
       id: generate_summary
+      if: steps.check_branch.outputs.is_new_branch == 'true'
       run: |
         python .github/scripts/generate_summary.py
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_MODEL: gpt-4o
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+
+    - name: Extract branch name
+      id: extract_branch
+      run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
     - name: Create Pull Request
-      if: steps.check_branch.outputs.is_new_branch == 'true'
-      uses: peter-evans/create-pull-request@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: Automated PR creation
-        branch: main
-        title: Automated Pull Request
-        body: ${{ env.SUMMARY }}
-        labels: |
-          automated-pr
+      run: |
+        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ steps.generate_summary.outputs.summary }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
