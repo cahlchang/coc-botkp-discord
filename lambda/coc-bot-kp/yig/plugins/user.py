@@ -115,7 +115,7 @@ def add_character_image(bot)->dict:
         print(e)
         raise e
 
-    if face_rects:
+    if len(face_rects) > 0:
         for x, y, w, h in face_rects:
             print("face find")
             # 顔の周りを取得する
