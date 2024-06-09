@@ -49,7 +49,7 @@ jobs:
 
     - name: Install GitHub CLI
       run: sudo apt-get install gh -y
-  
+
     - name: Run script to generate PR summary
       if: steps.check_branch.outputs.is_new_branch == 'true'
       id: generate_summary
