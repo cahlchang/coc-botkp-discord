@@ -68,6 +68,6 @@ jobs:
 
     - name: Create Pull Request
       run: |
-        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ needs.generate-summary.outputs.summary }}"
+        gh pr create --base main --head ${{ env.branch_name }} --title "Automated Pull Request from ${{ env.branch_name }} to main" --body "${{ needs.generate_summary.outputs.summary }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
