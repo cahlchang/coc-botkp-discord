@@ -50,8 +50,9 @@ def generate_summary():
     )
 
     summary = response.choices[0].message.content.strip()
+    summary_safe = summary.replace('\n', '%0A').replace('\r', '%0D')
     with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-        env_file.write(f"SUMMARY={summary}\n")
+        env_file.write(f"SUMMARY={summary_safe}\n")
 
 if __name__ == "__main__":
     try:
