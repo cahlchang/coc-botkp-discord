@@ -34,7 +34,7 @@ def generate_summary():
     prompt = "最近のコミットに基づいてプルリクエストの概要を生成してください。"
 
     commit_messages, commit_diff = get_all_commit_details()
-    prompt = f"以下のコミットメッセージと変更内容に基づいてプルリクエストの概要を生成してください。またGitHubマークダウン記法でわかりやすくしてください。\n\nコミットメッセージ:\n{commit_messages}\n\n変更内容:\n{commit_diff}"
+    prompt = f"以下のコミットメッセージと変更内容に基づいてプルリクエストの概要を生成してください。またGitHubマークダウン記法でわかりやすくしてください。内容は400token以内で収まるようにしてください。\n\nコミットメッセージ:\n{commit_messages}\n\n変更内容:\n{commit_diff}"
 
 
     response = client.chat.completions.create(
@@ -43,7 +43,7 @@ def generate_summary():
             {"role": "system", "content": "You are a helpful assistant specializing in generating pull request summaries based on recent commits."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=300,
+        max_tokens=500,
         temperature=0.5,
     )
 

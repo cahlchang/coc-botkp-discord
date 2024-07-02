@@ -2,35 +2,74 @@ import numpy as np
 import cv2
 import requests
 import datetime
-
+import re
 
 from yig.bot import listener
 from yig.util.data import (
     get_user_param,
     get_basic_status,
     build_user_panel,
-    read_user_data
+    read_user_data,
+    write_user_data
 )
-from yig.util.view import write_pc_image, get_pc_image_url, write_pc_image_origin
+
+from yig.util.view import (
+    write_pc_image,
+    get_pc_image_url,
+    write_pc_image_origin
+)
 import yig.config
 
 
-# @listener("change-status")
-# def update_user_status(bot):
-#     state_data = get_state_data(bot.team_id, bot.user_id)
-#     user_param = get_user_param(bot.team_id, bot.user_id, state_data["pc_id"])
-#     if "options" in bot.action_data and 2 == len(bot.action_data["options"]):
-#         status_name, operator, arg = result
-#         if status_name in state_data:
-#             val_targ = state_data[status_name]
-#         else:
-#             val_targ = "0"
+@listener("change-status")
+def update_user_status(bot):
+    user_data = read_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+    )
 
-#    num_targ = eval(f'{val_targ}{operator}{arg}')
-#    state_data[status_name] = num_targ
-#    set_state_data(bot.team_id, bot.user_id, state_data)
-#    return get_status_message("UPDATE STATUS", user_param, state_data), yig.config.COLOR_ATTENTION
+    user_param = get_user_param(
+        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=user_data["pc_id"]
+    )
+    action_data = bot.action_data["options"][0]["value"].upper()
+    parse_tpl = parse_string(action_data)
+    status_name = parse_tpl[0]
 
+    target_diff = user_data.get(status_name, 0)
+    if parse_tpl[1] == "+":
+        result_diff = target_diff + parse_tpl[2]
+    elif parse_tpl[1] == "-":
+        result_diff = target_diff - parse_tpl[2]
+
+    user_data[status_name] = result_diff
+
+    write_user_data(
+        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH, content=user_data
+    )
+
+    print(user_data)
+
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, user_data
+    )
+    image_url = get_pc_image_url(
+        bot.guild_id, bot.user_id, user_data["pc_id"], user_data["ts"]
+    )
+
+    return build_user_panel(
+        'CHANGE STATUS',
+        status_name + ' change',
+        f'{parse_tpl[1]}{parse_tpl[2]}',
+        yig.config.COLOR_INFO,
+        user_param["name"],
+        now_hp,
+        max_hp,
+        now_mp,
+        max_mp,
+        now_san,
+        max_san,
+        db,
+        image_url,
+    )
 
 @listener("status")
 def show_status(bot):
@@ -165,3 +204,14 @@ def add_character_image(bot)->dict:
             }
         ],
     }
+
+def parse_string(s: str) -> tuple[str, str, int]:
+    # 正規表現パターン: 任意の英字、+または-、数字
+    pattern = re.compile(r'([a-zA-Z]+)([+-])(\d+)')
+    match = pattern.match(s)
+
+    if match:
+        # 数字部分を整数型に変換してタプルを返す
+        return match.group(1), match.group(2), int(match.group(3))
+    else:
+        raise ValueError(f"Invalid input format: '{s}'. Expected format is 'letters+digits' or 'letters-digits'")
