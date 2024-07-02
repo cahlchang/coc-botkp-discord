@@ -13,7 +13,7 @@ python -m pytest
 
 
 #TODO
-とりあえず全コマンド2動くように
+とりあえず全コマンドが動くように
 
 実装済み
 跳躍（roll_skill）
