@@ -43,7 +43,7 @@ def generate_summary():
             {"role": "system", "content": "You are a helpful assistant specializing in generating pull request summaries based on recent commits."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=300,
+        max_tokens=500,
         temperature=0.5,
     )
 
