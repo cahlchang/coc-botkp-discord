@@ -37,7 +37,6 @@ def roll_skill(bot):
         guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
 
-    print(bot.action_data)
     # Analyze parameters from bot's value
     roll, operant, num_arg = analysis_roll_and_calculation(
         value=bot.action_data["options"][0]["value"]

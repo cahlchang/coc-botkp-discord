@@ -223,14 +223,15 @@ def get_now_status(
     >>> get_now_status('HP', user_param, state_data)
     13
     """
-    now_status = (
+    now_status_str = (
         user_param[status_name]
         if status_name_alias is None
         else user_param[status_name_alias]
     )
+    now_status = int(now_status_str)
 
     if status_name in state_data:
-        now_status += int(state_data[status_name])
+        now_status += state_data[status_name]
     return now_status
 
 
