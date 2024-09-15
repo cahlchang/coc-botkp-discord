@@ -10,11 +10,12 @@ command_manager: list = []
 
 
 class Bot(object):
-    def __init__(self, APPLICATION_PUBLIC_KEY, token ,req):
+    def __init__(self, APPLICATION_PUBLIC_KEY, APPLICATION_ID, token ,req):
         self.verify_key = VerifyKey(bytes.fromhex(APPLICATION_PUBLIC_KEY))
         self.HEADERS = {"Content-Type": "application/json"}
         self._interaction = req
         self._bot_token = token
+        self._application_id = APPLICATION_ID
         self.init_plugins()
 
     def verify(self, signature: str, timestamp: str, event: str) -> bool:
@@ -109,6 +110,10 @@ class Bot(object):
         return self._user_id
 
     @property
+    def application_id(self):
+        return self._application_id
+
+    @property
     def action_name(self):
         return self._action_name
 
@@ -135,7 +140,7 @@ class Bot(object):
     def dispatch(self):
         for command_data in command_manager:
             if command_data["command"] == self.action_name:
-                print("dispatch start")
+                print("dispatch start. :", self.action_name)
                 content = asyncio.run(
                     self.process_and_respond_interaction(command_data["function"])
                 )

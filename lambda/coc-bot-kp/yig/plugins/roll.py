@@ -155,12 +155,17 @@ def roll_dice(bot):
         bot.action_data["options"][0]["value"]
     )
     msg = f"*{sum_result}* 【ROLLED】\n {str_detail}"
-    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
-        user_param, state_data
-    )
-    image_url = get_pc_image_url(
-        bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
-    )
+    try:
+        now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+            user_param, state_data
+        )
+
+        image_url = get_pc_image_url(
+            bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
+        )
+    except Exception as _:
+        now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = 0, 0, 0, 0, 0, 0, 0
+        image_url = ""
 
     return {
         "content": "",

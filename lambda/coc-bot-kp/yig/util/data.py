@@ -347,58 +347,143 @@ def build_detail_user_panel(
     }
 
 
-def create_new_channel(bot_token: str, guild_id: str, user_id: str, name: str) -> str:
-    """
-    Creates a new channel in a Discord guild.
 
-    Args:
-        bot_token (str): The bot token with appropriate permissions to create channels.
-        guild_id (str): The ID of the guild where the channel will be created.
-        user_id (str): The ID of the user who will have specific permissions in the channel.
-        name (str): The name of the channel to be created.
-
-    Returns:
-        str: A message indicating the success or failure of channel creation.
-
-    Notes:
-        - The channel type is set to 0, indicating a text channel.
-        - By default, the channel will have a topic set to 'topic'.
-        - The user specified by 'user_id' will have read messages permission (1024) in the channel,
-          while other users in the guild will have this permission denied.
-        - If the channel creation is successful, returns a message indicating success.
-          If unsuccessful, returns a message indicating failure along with the status code and response details.
-    """
+def create_new_channel(bot_token: str, guild_id: str, user_id: str, bot_role_id: str, name: str) -> dict:
     url = f'https://discord.com/api/v10/guilds/{guild_id}/channels'
-
     headers = {
         'Authorization': f'Bot {bot_token}',
         'Content-Type': 'application/json'
     }
-
     data = {
         'name': name,
         'type': 0,
         'topic': 'topic',
         'permission_overwrites': [
             {
+                'id': bot_role_id,
+                'type': 0,
+                'allow': '2048'
+            },
+            {
                 'id': guild_id,
                 'type': 0,
-                'deny': '1024'
+                'deny': '1024'  # Deny 'VIEW_CHANNEL' for @everyone
             },
             {
                 'id': user_id,
                 'type': 1,
-                'allow': '1024'
+                'allow': '1024'  # Allow 'VIEW_CHANNEL' for the user
             }
         ]
     }
-
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:
-        print(response.json())
+        print(f"チャンネル作成成功: {response.json()}")
+        return response.json()
     else:
-        print(f"ステータスコード: {response.status_code}")
-        print(response.json())
-        return 'チャンネルの作成に失敗しました'
+        print(f"チャンネル作成失敗. ステータスコード: {response.status_code}")
+        print(f"レスポンス: {response.text}")
+        return None
 
-    return 'チャンネルが作成されました'
+
+def create_invite_link(bot_token: str, channel_id: str) -> str:
+    url = f'https://discord.com/api/v10/channels/{channel_id}/invites'
+    headers = {
+        'Authorization': f'Bot {bot_token}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'max_age': 0,
+        'max_uses': 0,
+        'unique': True
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        invite_code = response.json()['code']
+        print(f"招待リンク作成成功: https://discord.gg/{invite_code}")
+        return f'https://discord.gg/{invite_code}'
+    else:
+        print(f"招待リンク作成失敗. ステータスコード: {response.status_code}")
+        print(f"レスポンス: {response.json()}")
+        return None
+
+
+def send_message_to_channel(bot_token: str, channel_id: str, content: str) -> bool:
+    url = f'https://discord.com/api/v10/channels/{channel_id}/messages'
+    headers = {
+        'Authorization': f'Bot {bot_token}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'content': content
+    }
+    print(f"Sending message to channel {channel_id}")
+    print(f"Headers: {headers}")
+    print(f"Data: {data}")
+    
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        print(f"Response status code: {response.status_code}")
+        print(f"Response content: {response.text}")
+        
+        if response.status_code == 200:
+            print(f"メッセージ送信成功: {response.json()}")
+            return True
+        else:
+            print(f"メッセージ送信失敗. ステータスコード: {response.status_code}")
+            print(f"エラーメッセージ: {response.json().get('message', 'Unknown error')}")
+            print(f"エラーコード: {response.json().get('code', 'Unknown code')}")
+            return False
+    except Exception as e:
+        print(f"メッセージ送信中に予期せぬエラーが発生しました: {str(e)}")
+        return False
+
+
+def create_error_response(title, message, severity="error"):
+    if severity == "warning":
+        color = 0xFFFF00  # 黄色
+    else:
+        color = 0xFF0000  # 赤色
+
+    return {
+        "content": "",
+        "embeds": [{
+            "type": "rich",
+            "title": title,
+            "description": message,
+            "color": color
+        }]
+    }
+
+
+def get_bot_role_id(bot_token: str, guild_id: str) -> str:
+    # まず、ボット自身の情報を取得
+    bot_info_url = "https://discord.com/api/v10/users/@me"
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type": "application/json"
+    }
+    
+    bot_response = requests.get(bot_info_url, headers=headers)
+    if bot_response.status_code != 200:
+        print(f"Failed to get bot info. Status code: {bot_response.status_code}")
+        return None
+    
+    bot_id = bot_response.json()['id']
+    
+    # 次に、ギルドのメンバー情報を取得
+    guild_member_url = f"https://discord.com/api/v10/guilds/{guild_id}/members/{bot_id}"
+    
+    member_response = requests.get(guild_member_url, headers=headers)
+    if member_response.status_code != 200:
+        print(f"Failed to get member info. Status code: {member_response.status_code}")
+        return None
+    
+    # ボットのロールを取得（最後のロールが最高位のロール）
+    bot_roles = member_response.json()['roles']
+    if not bot_roles:
+        print("Bot has no roles in this guild.")
+        return None
+    
+    return bot_roles[-1] 
