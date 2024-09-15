@@ -4,6 +4,7 @@ from re import Match
 import json
 import unicodedata
 import datetime
+import traceback
 
 from yig.bot import listener, Bot
 from yig.util.data import (
@@ -12,11 +13,16 @@ from yig.util.data import (
     get_basic_status,
     get_user_param,
     get_now_status,
-    write_session_data
+    write_session_data,
+    create_error_response
 )
 
 # from yig.util.data import get_state_data, remove_state_data, write_user_data, get_status_message,  get_user_param, get_now_status
-from yig.util.view import get_pc_image_url
+from yig.util.view import (
+    get_pc_image_url,
+    create_param_image,
+    save_param_image
+)
 
 # create_param_image, get_pc_image_url, get_param_image_path, save_param_image, section_builder, divider_builder
 import yig.config
@@ -55,9 +61,15 @@ def init_charasheet(bot :Bot):
     write_user_data(
         bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, state_data
     )
-    return build_chara_response(
-        "CHARACTER INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
-    )
+    try:
+        chara_response = build_chara_response(
+            "CHARACTER INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
+        )
+    except Exception as e:
+        return create_error_response("キャラクターシートの読み込みに失敗しました",
+                                    ''.join(traceback.TracebackException.from_exception(e).format()))
+
+    return chara_response
 
 
 @listener("reload")
@@ -332,7 +344,6 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
             if skill_point != 0:
                 skill_data[key] = skill_point
     sorted_skill_data = sorted(skill_data.items(), key=lambda x: x[1], reverse=True)
-    # image_url = get_pc_image_url(guild_id, user_id, pc_id, state_data['ts'])
     skill_message = ""
     #TODO write session data このあとすぐ対応
     #write_session_data
@@ -356,19 +367,13 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
 
         skill_message += f"**{skill_name}:** {skill_point}%　"
 
-    # image = create_param_image(guild_id,
-    #                            user_id,
-    #                            user_param["pc_id"],
-    #                            user_param)
-    # param_image_path = get_param_image_path(guild_id,
-    #                                         user_id,
-    #                                         user_param["pc_id"])
-    # param_image_url = save_param_image(image,
-    #                                    param_image_path,
-    #                                    guild_id,
-    #                                    user_id,
-    #                                    user_param["pc_id"])
-    # param_image_url += "?%s" % state_data["ts"]
+    image = create_param_image(user_param)
+    param_image_url = save_param_image(
+        image,
+        guild_id,
+        user_id,
+        user_param["pc_id"])
+    param_image_url += "?%s" % state_data["ts"]
     param_message = ""
     for name in ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"]:
         if name != "EDU":
@@ -378,7 +383,7 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
 
     line3 = ""
     if user_param["game"] == "coc":
-        line3 = f"**HP: ** {now_hp}/{max_hp}　 **MP:** {now_mp}/{max_mp}　 **SAN:** {now_san}/{max_san}　 **DEX: ** {dex}　  **DB:** {db}\n"
+        line3 = f"**HP: ** {now_hp}/{max_hp} **MP:** {now_mp}/{max_mp} **SAN:** {now_san}/{max_san} **DEX: ** {dex} **DB:** {db}\n"
     elif user_param["game"] == "coc7":
         line3 = f"**HP: ** {now_hp}/{max_hp} **MP:** {now_mp}/{max_mp} **SAN: {now_san}/{max_san} **DEX: ** {dex} **DB:** {db} **Luck:** {now_luck}/{luck_start}/99\n"
 
@@ -389,7 +394,7 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
                 "type": "rich",
                 "title": title,
                 "description": "",
-                "color": 0x000000,
+                "color": 0x3498db,
                 "fields": [
                     {
                         "name": f"**{pc_name}**",
@@ -407,15 +412,14 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
             },
             {
                 "type": "rich",
-                "title": "Skill title",
                 "description": "",
-                "color": 0x000000,
+                "color": 0x2ecc71,
                 "fields": [
-                    {"name": "SKILL", "value": skill_message}
+                    {"name": "Skills", "value": skill_message}
                 ],
                 "inline": False,
                 "thumbnail": {
-                    "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"])
+                    "url": param_image_url
                 }
                 # "image": {
                 #     "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"]),

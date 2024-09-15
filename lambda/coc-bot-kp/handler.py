@@ -32,7 +32,12 @@ def run(event, lambda_context):
     if not BOT_TOKEN:
         raise ValueError("Environment variable 'TOKEN' is not set")
 
-    bot = Bot(APPLICATION_PUBLIC_KEY, BOT_TOKEN, req)
+    APPLICATION_ID = os.environ.get("APPLICATION_ID")
+    if not APPLICATION_ID:
+        raise ValueError("Environment variable 'APPLICATION_ID' is not set")
+
+
+    bot = Bot(APPLICATION_PUBLIC_KEY, APPLICATION_ID, BOT_TOKEN, req)
     if not bot.verify(
         headers.get("x-signature-ed25519"),
         headers.get("x-signature-timestamp"),
