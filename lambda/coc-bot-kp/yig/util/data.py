@@ -1,12 +1,13 @@
 import json
-import boto3
+import uuid
 import requests
+from datetime import datetime
 from botocore.exceptions import ClientError
 
 import yig.config
+from yig.bot import Bot
 
-
-def write_user_data(guild_id: str, user_id: str, filename: str, content: dict) -> bool:
+def write_user_data(bot: Bot, guild_id: str, user_id: str, filename: str, content: dict) -> bool:
     """
     Write user data to S3 bucket.
 
@@ -26,7 +27,7 @@ def write_user_data(guild_id: str, user_id: str, filename: str, content: dict) -
     bool
         Returns True if the write operation was successful, False otherwise.
     """
-    s3 = boto3.client("s3")
+    s3 = bot.boto3.client("s3")
     user_dir = f"{guild_id}/{user_id}"
     obj_key = f"{user_dir}/{filename}"
 
@@ -45,7 +46,7 @@ def write_user_data(guild_id: str, user_id: str, filename: str, content: dict) -
     return True
 
 
-def read_user_data(guild_id: str, user_id: str, filename: str) -> dict:
+def read_user_data(bot: Bot, guild_id: str, user_id: str, filename: str) -> dict:
     """
     Read user data from the specified file in the given user's directory in the S3 bucket.
 
@@ -63,7 +64,7 @@ def read_user_data(guild_id: str, user_id: str, filename: str) -> dict:
     dict
         The contents of the dictionary read from the file, or None if the file could not be read.
     """
-    s3 = boto3.client("s3")
+    s3 = bot.boto3.client("s3")
     key = f"{guild_id}/{user_id}/{filename}"
 
     try:
@@ -79,7 +80,7 @@ def read_user_data(guild_id: str, user_id: str, filename: str) -> dict:
     return json.loads(response["Body"].read().decode("utf-8"))
 
 
-def remove_user_data(guild_id: str, user_id: str, filename: str) -> bool:
+def remove_user_data(bot: Bot, guild_id: str, user_id: str, filename: str) -> bool:
     """
     Remove user data from the specified file in the given user's directory in the S3 bucket.
 
@@ -97,7 +98,7 @@ def remove_user_data(guild_id: str, user_id: str, filename: str) -> bool:
     bool
         Returns True if the removal operation was successful, False otherwise.
     """
-    s3 = boto3.client("s3")
+    s3 = bot.boto3.client("s3")
     key = f"{guild_id}/{user_id}/{filename}"
 
     try:
@@ -114,10 +115,36 @@ def remove_user_data(guild_id: str, user_id: str, filename: str) -> bool:
 
 
 
-def add_session_result(guild_id: str, channel_id: str ,user_id: str):
-    pass
+def add_dice_log(bot: Bot, guild_id: str, channel_id: str ,user_id: str, roll: str, num_targ: str, num_rand: str, result: str):
+    timestamp = datetime.utcnow().isoformat()
+    log_id = str(uuid.uuid4())
 
-def write_session_data(guild_id: str, path: str, content:dict):
+    item = {
+        'PK': f"GUILD#{guild_id}#CHANNEL#{channel_id}",
+        'SK': f"{timestamp}#{log_id}",
+        'EntityType': 'DICELOG',
+        'GuildID': guild_id,
+        'ChannelID': channel_id,
+        'UserID': user_id,
+        'RollResult': roll,
+        'NumTarg': num_targ,
+        'NumRand': num_rand,
+        'Result': result,
+        'Timestamp': timestamp
+    }
+
+    try:
+        dynamodb = bot.boto3.resource('dynamodb')
+        table = dynamodb.Table("CoCBotKPDiscord")
+
+        response = table.put_item(Item=item)
+        print(f"ダイスログが正常に追加されました: {log_id}")
+        return log_id
+    except Exception as e:
+        print(f"エラーが発生しました: {str(e)}")
+        return None
+
+def write_session_data(bot: Bot, guild_id: str, path: str, content:dict):
     """
     Write session data to the S3 bucket.
 
@@ -128,7 +155,7 @@ def write_session_data(guild_id: str, path: str, content:dict):
 
     """
     try:
-        s3_client = boto3.resource('s3')
+        s3_client = bot.boto3.resource('s3')
         bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
         obj = bucket.Object(f"{guild_id}/{path}")
         response = obj.put(
@@ -143,7 +170,7 @@ def write_session_data(guild_id: str, path: str, content:dict):
         raise e
 
 
-def read_session_data(guild_id : str, path:str) -> dict:
+def read_session_data(bot: Bot, guild_id: str, path:str) -> dict:
     """
     Read session data from the S3 bucket.
 
@@ -155,7 +182,7 @@ def read_session_data(guild_id : str, path:str) -> dict:
         The path to the session data.
     """
     try:
-        s3_client = boto3.resource('s3')
+        s3_client = bot.boto3.resource('s3')
         bucket = s3_client.Bucket(yig.config.AWS_S3_BUCKET_NAME)
         obj = bucket.Object(f"{guild_id}/{path}")
         response = obj.get()
@@ -165,7 +192,7 @@ def read_session_data(guild_id : str, path:str) -> dict:
         raise e
 
 
-def get_user_param(guild_id: str, user_id: str, pc_id: str) -> dict:
+def get_user_param(bot: Bot, guild_id: str, user_id: str, pc_id: str) -> dict:
     """
     Get the parameter for the specified user.
 
@@ -184,7 +211,7 @@ def get_user_param(guild_id: str, user_id: str, pc_id: str) -> dict:
     dict
         The user's parameters.
     """
-    return read_user_data(guild_id, user_id, f"{pc_id}.json")
+    return read_user_data(bot, guild_id, user_id, f"{pc_id}.json")
 
 
 def get_now_status(
@@ -487,3 +514,28 @@ def get_bot_role_id(bot_token: str, guild_id: str) -> str:
         return None
     
     return bot_roles[-1] 
+
+
+def create_heart_string(now_hp, max_hp):
+    filled_hearts = '🩷' * now_hp
+    empty_hearts = '🖤' * (max_hp - now_hp)
+    return filled_hearts + empty_hearts
+
+
+def create_magic_point_string(now_mp, max_mp):
+    filled_magic_point = '🔮' * now_mp
+    empty_magic_point = '🌫️' * (max_mp - now_mp)
+    return filled_magic_point + empty_magic_point
+
+
+def create_san_string(san):
+    if not 0 <= san <= 99:
+        raise ValueError("SAN値は0から99の間である必要があります。")
+
+    full_moons = san // 10
+    remaining = san % 10
+    half_moons = remaining // 5
+    crescent_moons = remaining % 5
+
+    representation = '🌕' * full_moons + '🌓' * half_moons + '🌙' * crescent_moons
+    return representation
