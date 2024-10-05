@@ -10,7 +10,8 @@ from yig.util.data import (
     get_basic_status,
     build_user_panel,
     read_user_data,
-    write_user_data
+    write_user_data,
+    create_heart_string
 )
 
 from yig.util.view import (
@@ -24,11 +25,11 @@ import yig.config
 @listener("change-status")
 def update_user_status(bot):
     user_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=user_data["pc_id"]
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=user_data["pc_id"]
     )
     action_data = bot.action_data["options"][0]["value"].upper()
     parse_tpl = parse_string(action_data)
@@ -43,7 +44,7 @@ def update_user_status(bot):
     user_data[status_name] = result_diff
 
     write_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH, content=user_data
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH, content=user_data
     )
 
     print(user_data)
@@ -74,10 +75,10 @@ def update_user_status(bot):
 @listener("status")
 def show_status(bot):
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
     user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
     now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
         user_param, state_data
@@ -121,7 +122,7 @@ def add_character_image(bot)->dict:
         dict: return value
     """
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     # Cascadeファイルの読み込み
@@ -136,6 +137,7 @@ def add_character_image(bot)->dict:
     image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
     write_pc_image_origin(
+        bot=bot,
         guild_id=bot.guild_id,
         user_id=bot.user_id,
         pc_id=state_data["pc_id"],
@@ -172,6 +174,7 @@ def add_character_image(bot)->dict:
             )
 
             write_pc_image(
+                bot,
                 bot.guild_id,
                 bot.user_id,
                 state_data["pc_id"],
@@ -179,6 +182,7 @@ def add_character_image(bot)->dict:
             )
     else:
         write_pc_image(
+            bot,
             bot.guild_id,
             bot.user_id,
             state_data["pc_id"],
