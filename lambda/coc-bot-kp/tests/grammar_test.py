@@ -1,5 +1,5 @@
 import py_compile
-import pytest
+import pytest # type: ignore
 import glob
 
 python_files = glob.glob("*.py", recursive=True)
