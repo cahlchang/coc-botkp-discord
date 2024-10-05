@@ -1,14 +1,34 @@
 import json
 import os
 from yig.bot import Bot
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 import requests
 import traceback
+
+# import cProfile
+# import pstats
+# import io
+
+# def run_with_profiling(event, lambda_context):
+#     pr = cProfile.Profile()
+#     pr.enable()
+    
+#     try:
+#         run(event, lambda_context)
+#     finally:
+#         # pass
+#         pr.disable()
+#         s = io.StringIO()
+#         ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+#         ps.print_stats()
+#         print("Profiling results:")
+#         print(s.getvalue())
 
 
 def handle(event, lambda_context):
     try:
         run(event, lambda_context)
+        # run_with_profiling(event, lambda_context)
     except Exception as e:
         webhook = os.environ.get("ERROR_WEBHOOK")
         stack_trace = traceback.format_exc()

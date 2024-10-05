@@ -5,7 +5,8 @@ import json
 
 
 from yig.bot import listener
-from yig.util.data import get_user_param, get_basic_status, read_user_data, add_session_result
+from yig.bot import Bot
+from yig.util.data import get_user_param, get_basic_status, read_user_data, add_dice_log
 
 # set_state_data,
 from yig.util.view import get_pc_image_url
@@ -13,7 +14,7 @@ import yig.config
 
 
 @listener("cc")
-def roll_skill(bot):
+def roll_skill(bot: Bot):
     """
     Perform a roll of skills and return the result data.
 
@@ -30,11 +31,11 @@ def roll_skill(bot):
 
     # Get user's status information
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
 
     # Analyze parameters from bot's value
@@ -69,20 +70,18 @@ def roll_skill(bot):
     if user_param["game"] == "coc":
         result, color = judge_1d100_with_6_ver(target=num_targ, dice=num_rand)
     else:
-        result, color, difficult = judge_1d100_with_7_ver(
-            target=num_targ, dice=num_rand
-        )
+        result, color = judge_1d100_with_7_ver(target=num_targ, dice=num_rand)
 
-    # add_session_result(
-    #     guild_id=bot.guild_id, channel_id=bot.channel_id ,user_id=bot.user_id, {roll}
-    # )
-    # if raw_session_data:
-    #     session_data = json.loads(raw_session_data)
-    #     session_data.append({"roll": roll.upper(),
-    #                          "num_targ": f"{num}{operant}{num_arg}",
-    #                          "num_rand": num_rand,
-    #                          "result": result})
-    #     write_session_data(bot.team_id, "%s/%s.json" % (bot.channel_name ,state_data["pc_id"]), json.dumps(session_data, ensure_ascii=False))
+    add_dice_log(
+        bot=bot,
+        guild_id=bot.guild_id,
+        channel_id=bot.channel_id,
+        user_id=bot.user_id,
+        roll=roll.upper(),
+        num_targ=f"{num}{operant}{num_arg}",
+        num_rand=num_rand,
+        result=result
+    )
 
     # Get status information.
     now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
@@ -128,7 +127,7 @@ def roll_skill(bot):
 
 
 @listener("dice")
-def roll_dice(bot):
+def roll_dice(bot: Bot):
     """
     Perform a roll of dice and return the result data.
 
@@ -143,19 +142,18 @@ def roll_dice(bot):
         Responce data.
     """
     # Get user's status information
-    state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
-    )
-
-    user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
-    )
-
-    str_message, str_detail, sum_result = create_post_message_rolls_result(
-        bot.action_data["options"][0]["value"]
-    )
-    msg = f"*{sum_result}* 【ROLLED】\n {str_detail}"
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = 0, 0, 0, 0, 0, 0, 0
+    image_url = "https://d13xcuicr0q687.cloudfront.net/public/noimage.jpg"
+    user_name = "Unknown"
     try:
+        state_data = read_user_data(
+            bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        )
+
+        user_param = get_user_param(
+            bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+        )
+
         now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
             user_param, state_data
         )
@@ -163,9 +161,15 @@ def roll_dice(bot):
         image_url = get_pc_image_url(
             bot.guild_id, bot.user_id, state_data["pc_id"], state_data["ts"]
         )
+        user_name = user_param["name"]
     except Exception as _:
-        now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = 0, 0, 0, 0, 0, 0, 0
-        image_url = ""
+        pass
+
+    str_message, str_detail, sum_result = create_post_message_rolls_result(
+        bot.action_data["options"][0]["value"]
+    )
+    msg = f"*{sum_result}* 【ROLLED】\n {str_detail}"
+
 
     return {
         "content": "",
@@ -180,7 +184,7 @@ def roll_dice(bot):
                 "footer": {
                     "text": "%s    HP: %s/%s MP: %s/%s SAN: %s/%s DB: %s"
                     % (
-                        user_param["name"],
+                        user_name,
                         now_hp,
                         max_hp,
                         now_mp,
@@ -196,16 +200,15 @@ def roll_dice(bot):
 
 
 @listener("sanc")
-def sanity_check(bot):
+def sanity_check(bot: Bot):
     state_data = read_user_data(
-        guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
     )
 
     user_param = get_user_param(
-        guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=state_data["pc_id"]
     )
-    param = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
-    c_san = int(param["現在SAN"])
+    c_san = int(user_param["現在SAN"])
     if "SAN" in state_data:
         d_san = int(state_data["SAN"])
     else:
@@ -424,7 +427,7 @@ def judge_1d100_with_7_ver(target: int, dice: int) -> tuple[str, str]:
     """
     if dice > target:
         if target >= 50 and dice == 100 or dice >= 96:
-            return "ファンブル", yig.config.COLOR_FUMBLE, "M"
+            return "ファンブル", yig.config.COLOR_FUMBLE
         return "失敗", yig.config.COLOR_FAILURE
 
     if dice <= math.floor(target / 5):

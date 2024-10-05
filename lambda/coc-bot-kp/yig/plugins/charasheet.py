@@ -13,29 +13,28 @@ from yig.util.data import (
     get_basic_status,
     get_user_param,
     get_now_status,
-    write_session_data,
-    create_error_response
+    create_error_response,
+    create_heart_string,
+    create_magic_point_string,
+    create_san_string
 )
 
-# from yig.util.data import get_state_data, remove_state_data, write_user_data, get_status_message,  get_user_param, get_now_status
 from yig.util.view import (
     get_pc_image_url,
     create_param_image,
     save_param_image
 )
 
-# create_param_image, get_pc_image_url, get_param_image_path, save_param_image, section_builder, divider_builder
 import yig.config
 
 @listener("init")
-def init_charasheet(bot :Bot):
+def init_charasheet(bot:Bot):
     matcher: Match[str] | None = re.match(r"(https.*)", bot.action_data["options"][0]["value"])
     if not matcher:
         raise ValueError("Invalid URL")
     url_plane: str = matcher.group(1)
     url: str = f"{url_plane}.json"
     response: requests.Response = requests.get(url)
-
     request_json: dict = json.loads(response.text)
 
     if request_json["game"] == "coc":
@@ -48,7 +47,7 @@ def init_charasheet(bot :Bot):
     pc_id: str = user_param["pc_id"]
     key: str = f"{pc_id}.json"
 
-    write_user_data(bot.guild_id, bot.user_id, key, user_param)
+    write_user_data(bot, bot.guild_id, bot.user_id, key, user_param)
 
     tz = datetime.timezone.utc
     now = datetime.datetime.now(tz)
@@ -59,11 +58,11 @@ def init_charasheet(bot :Bot):
     }
 
     write_user_data(
-        bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, state_data
+        bot, bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH, state_data
     )
     try:
         chara_response = build_chara_response(
-            "CHARACTER INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
+            bot, "INIT", user_param, state_data, bot.guild_id, bot.user_id, pc_id
         )
     except Exception as e:
         return create_error_response("キャラクターシートの読み込みに失敗しました",
@@ -73,9 +72,9 @@ def init_charasheet(bot :Bot):
 
 
 @listener("reload")
-def update_charasheet_with_vampire(bot):
-    state_data = read_user_data(bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH)
-    user_param_old = get_user_param(bot.guild_id, bot.user_id, state_data["pc_id"])
+def update_charasheet_with_vampire(bot: Bot):
+    state_data = read_user_data(bot, bot.guild_id, bot.user_id, yig.config.STATE_FILE_PATH)
+    user_param_old = get_user_param(bot, bot.guild_id, bot.user_id, state_data["pc_id"])
     tz = datetime.timezone.utc
     now = datetime.datetime.now(tz)
     state_data["ts"] = now.timestamp()
@@ -91,9 +90,9 @@ def update_charasheet_with_vampire(bot):
     pc_id = user_param["pc_id"]
     key = f"{pc_id}.json"
 
-    write_user_data(bot.guild_id, bot.user_id, key, user_param)
+    write_user_data(bot, bot.guild_id, bot.user_id, key, user_param)
     return build_chara_response(
-        "RELOAD CHARACTER", user_param, state_data, bot.guild_id, bot.user_id, pc_id
+        bot, "RELOAD", user_param, state_data, bot.guild_id, bot.user_id, pc_id
     )
 
 
@@ -317,7 +316,7 @@ def format_param_json_with_7(bot, request_json):
     return param_json
 
 
-def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id):
+def build_chara_response(bot, title, user_param, state_data, guild_id, user_id, pc_id):
     now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
         user_param, state_data
     )
@@ -345,8 +344,6 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
                 skill_data[key] = skill_point
     sorted_skill_data = sorted(skill_data.items(), key=lambda x: x[1], reverse=True)
     skill_message = ""
-    #TODO write session data このあとすぐ対応
-    #write_session_data
 
     def get_east_asian_width_count(text):
         count = 0
@@ -360,15 +357,16 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
     cnt_word = 0
     for skill_data in sorted_skill_data:
         skill_name, skill_point = skill_data
-        cnt_word += get_east_asian_width_count(f"**{skill_name}:** {skill_point}%　")
-        if 50 < cnt_word:
+        cnt_word += get_east_asian_width_count(f"**{skill_name}:** {skill_point}% ")
+        if 100 < cnt_word:
             skill_message += "\n"
             cnt_word = 0
 
-        skill_message += f"**{skill_name}:** {skill_point}%　"
+        skill_message += f"**{skill_name}:** {skill_point}% "
 
-    image = create_param_image(user_param)
+    image = create_param_image(bot, user_param)
     param_image_url = save_param_image(
+        bot,
         image,
         guild_id,
         user_id,
@@ -376,33 +374,36 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
     param_image_url += "?%s" % state_data["ts"]
     param_message = ""
     for name in ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"]:
-        if name != "EDU":
-            param_message += "**%s**:%s | " % (name, user_param[name])
+        if name == "EDU":
+            param_message += "**%s:**%s" % (name, user_param[name])
+        elif name == "DEX":
+            param_message += "**%s:**%s \n" % (name, user_param[name])
         else:
-            param_message += "**%s**:%s" % (name, user_param[name])
+            param_message += "**%s:**%s | " % (name, user_param[name])
 
     line3 = ""
+    hp_string = create_heart_string(int(now_hp), int(max_hp))
+    mp_string = create_magic_point_string(int(now_mp), int(max_mp))
+    san_string = create_san_string(int(now_san))
     if user_param["game"] == "coc":
-        line3 = f"**HP: ** {now_hp}/{max_hp} **MP:** {now_mp}/{max_mp} **SAN:** {now_san}/{max_san} **DEX: ** {dex} **DB:** {db}\n"
+        line3 = f"\n**HP: ** {now_hp}/{max_hp} {hp_string} \n**MP:** {now_mp}/{max_mp} {mp_string} \n**SAN:** {now_san}/{max_san} {san_string}"
     elif user_param["game"] == "coc7":
-        line3 = f"**HP: ** {now_hp}/{max_hp} **MP:** {now_mp}/{max_mp} **SAN: {now_san}/{max_san} **DEX: ** {dex} **DB:** {db} **Luck:** {now_luck}/{luck_start}/99\n"
+        line3 = f"\n**HP: ** {now_hp}/{max_hp} **MP:** {now_mp}/{max_mp} **SAN: {now_san}/{max_san} **DEX: ** {dex} **DB:** {db} **Luck:** {now_luck}/{luck_start}/99\n"
 
     return {
         "content": "",
         "embeds": [
             {
                 "type": "rich",
-                "title": title,
                 "description": "",
+                "title": f"**{title}**",
                 "color": 0x3498db,
                 "fields": [
                     {
                         "name": f"**{pc_name}**",
                         "value": (
-                            f"**JOB: ** {job}  **AGE: ** {age}  **SEX :** {sex}\n"
-                            + line3
-                            + param_message
-                        ),
+                            line3
+                        )
                     }
                 ],
                 "inline": False,
@@ -413,19 +414,24 @@ def build_chara_response(title, user_param, state_data, guild_id, user_id, pc_id
             {
                 "type": "rich",
                 "description": "",
-                "color": 0x2ecc71,
+                "color": 0x3498db,
                 "fields": [
-                    {"name": "Skills", "value": skill_message}
+                    {
+                        "name": "",
+                        "value": f"**JOB: ** {job}  \n**AGE: ** {age} **DB: ** {db} **GENDER: ** {sex}\n"
+                        + param_message
+                    }
                 ],
                 "inline": False,
                 "thumbnail": {
                     "url": param_image_url
                 }
-                # "image": {
-                #     "url": get_pc_image_url(guild_id, user_id, pc_id, state_data["ts"]),
-                #     "height": 400,
-                #     "width": 200
-                # }
+            },
+            {
+                "type": "rich",
+                "description": skill_message,
+                "color": 0x2ecc71,
+                "inline": False
             }
         ]
     }

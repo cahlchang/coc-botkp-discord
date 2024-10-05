@@ -1,17 +1,15 @@
 import requests
 import json
-import boto3
 import os
 import math
 import gzip
-from PIL import Image, ImageDraw, ImageFont
 
 import yig.config
+from yig.bot import Bot
 
-
-def write_pc_image(guild_id, user_id, pc_id, image_bytes):
+def write_pc_image(bot:Bot, guild_id:str, user_id:str, pc_id:str, image_bytes:any):
     image_key = f"{guild_id}/{user_id}/{pc_id}_thum.jpg"
-    s3_client = boto3.client("s3")
+    s3_client = bot.boto3.client("s3")
 
     s3_client.put_object(
         Bucket=yig.config.AWS_S3_BUCKET_NAME,
@@ -23,9 +21,9 @@ def write_pc_image(guild_id, user_id, pc_id, image_bytes):
 
     return image_key
 
-def write_pc_image_origin(guild_id, user_id, pc_id, image_bytes):
+def write_pc_image_origin(bot:Bot, guild_id, user_id, pc_id, image_bytes):
     image_key = f"{guild_id}/{user_id}/{pc_id}_origin.jpg"
-    s3_client = boto3.client("s3")
+    s3_client = bot.boto3.client("s3")
 
     s3_client.put_object(
         Bucket=yig.config.AWS_S3_BUCKET_NAME,
@@ -47,7 +45,10 @@ def get_pc_image_url(guild_id, user_id, pc_id, ts) -> str:
     else:
         return url
 
-def create_param_image(user_param):
+def create_param_image(bot, user_param):
+    Image = bot.PIL.Image
+    ImageDraw = bot.PIL.ImageDraw
+    ImageFont = bot.PIL.ImageFont
     # math define
     n = 8
     W = H = 400
@@ -171,12 +172,12 @@ def create_param_image(user_param):
         )
     return canvas
 
-def save_param_image(image, guild_id, user_id, pc_id):
+def save_param_image(bot, image, guild_id, user_id, pc_id):
     image_param_path = f"/tmp/{pc_id}_param.png"
     image_param_key = f"{guild_id}/{user_id}/{pc_id}_param.png"
     image.save(image_param_path)
 
-    s3_client = boto3.client('s3')
+    s3_client = bot.boto3.client('s3')
     s3_client.upload_file(image_param_path, yig.config.AWS_S3_BUCKET_NAME, image_param_key)
     s3_client.put_object_tagging(
         Bucket = yig.config.AWS_S3_BUCKET_NAME,

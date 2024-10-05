@@ -6,10 +6,37 @@ import os
 import asyncio
 import requests
 
+
+import importlib
+from typing import Union, Callable
+
+
+class LazyImport:
+    def __init__(self, module_or_func: Union[str, Callable, dict[str, str]]):
+        self.module_or_func = module_or_func
+        self._module = None
+
+    def __call__(self) -> any:
+        if self._module is None:
+            if isinstance(self.module_or_func, str):
+                self._module = importlib.import_module(self.module_or_func)
+            elif isinstance(self.module_or_func, dict):
+                self._module = type('LazyModule', (), {
+                    k: LazyImport(v) for k, v in self.module_or_func.items()
+                })()
+            else:
+                self._module = self.module_or_func()
+        return self._module
+
+    def __getattr__(self, name: str) -> any:
+        if self._module is None:
+            self._module = self()
+        return getattr(self._module, name)
+
+
 command_manager: list = []
-
-
 class Bot(object):
+
     def __init__(self, APPLICATION_PUBLIC_KEY, APPLICATION_ID, token ,req):
         self.verify_key = VerifyKey(bytes.fromhex(APPLICATION_PUBLIC_KEY))
         self.HEADERS = {"Content-Type": "application/json"}
@@ -17,6 +44,36 @@ class Bot(object):
         self._bot_token = token
         self._application_id = APPLICATION_ID
         self.init_plugins()
+
+    def lazy_library_imports(self):
+        self._lazy_imports = {
+            'boto3': LazyImport('boto3'),
+            'numpy': LazyImport('numpy'),
+            'PIL': LazyImport({
+                'Image': 'PIL.Image',
+                'ImageDraw': 'PIL.ImageDraw',
+                'ImageFont': 'PIL.ImageFont'
+            }),
+            'ClientError': LazyImport(lambda: importlib.import_module('botocore.exceptions').ClientError),
+        }
+
+    def __getattr__(self, name: str) -> any:
+        if name not in self._lazy_imports:
+            if name == 'boto3':
+                self._lazy_imports[name] = LazyImport('boto3')
+            elif name == 'numpy':
+                self._lazy_imports[name] = LazyImport('numpy')
+            elif name == 'PIL':
+                self._lazy_imports[name] = LazyImport({
+                    'Image': 'PIL.Image',
+                    'ImageDraw': 'PIL.ImageDraw',
+                    'ImageFont': 'PIL.ImageFont'
+                })
+            elif name == 'ClientError':
+                self._lazy_imports[name] = LazyImport(lambda: importlib.import_module('botocore.exceptions').ClientError)
+            else:
+                raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        return self._lazy_imports[name]()
 
     def verify(self, signature: str, timestamp: str, event: str) -> bool:
         """
@@ -133,6 +190,7 @@ class Bot(object):
         interactive_id = self.interaction["id"]
         token = self.interaction["token"]
         task = asyncio.create_task(self.send_deferred_response(interactive_id, token))
+        self.lazy_library_imports()
         content = dispatch_function(self)
         await task
         return content
