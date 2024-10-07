@@ -6,7 +6,7 @@ import json
 
 from yig.bot import listener
 from yig.bot import Bot
-from yig.util.data import get_user_param, get_basic_status, read_user_data, add_dice_log
+from yig.util.data import get_user_param, get_basic_status, read_user_data, add_dice_log, get_dice_logs, build_user_panel
 
 # set_state_data,
 from yig.util.view import get_pc_image_url
@@ -77,6 +77,7 @@ def roll_skill(bot: Bot):
         guild_id=bot.guild_id,
         channel_id=bot.channel_id,
         user_id=bot.user_id,
+        pc_id=state_data["pc_id"],
         roll=roll.upper(),
         num_targ=f"{num}{operant}{num_arg}",
         num_rand=num_rand,
@@ -248,6 +249,58 @@ def sanity_check(bot: Bot):
         ],
     }
     return return_obj
+
+
+@listener("result")
+def show_result(bot) -> list[dict]:
+    user_data = read_user_data(
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH
+    )
+
+    user_param = get_user_param(
+        bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, pc_id=user_data["pc_id"]
+    )
+    now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
+        user_param, user_data
+    )
+
+    result_items = get_dice_logs(bot=bot,
+                                guild_id=bot.guild_id,
+                                channel_id=bot.channel_id,
+                                user_id=bot.user_id,
+                                pc_id=user_data["pc_id"])
+    image_url = get_pc_image_url(bot.guild_id, bot.user_id, user_data['pc_id'], user_data['ts'])
+    result_message = ""
+    # cnt_msg = 60
+
+    for item in result_items:
+        symbols = {"クリティカル": "🌟",
+                    "イクストリーム": "✨️",
+                    "ハード": "🟡",
+                    "成功": "🟢",
+                    "失敗": "❌️",
+                    "ファンブル": "☠️"}
+
+        result_message += "%s *%s* *%s* *%s* (%s)\n" % (symbols[item["Result"]], item["Result"], item["RollResult"], item["NumRand"], item["NumTarg"])
+
+    if result_message == "":
+        result_message = "No Result"
+
+    return build_user_panel(
+        "RESULT",
+        "",
+        result_message,
+        yig.config.COLOR_INFO,
+        "name",
+        now_hp,
+        max_hp,
+        now_mp,
+        max_mp,
+        now_san,
+        max_san,
+        db,
+        image_url,
+    )
 
 
 def analysis_roll_and_calculation(value: str) -> tuple[str, str, int]:
