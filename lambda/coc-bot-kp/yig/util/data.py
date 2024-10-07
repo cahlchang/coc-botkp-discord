@@ -3,6 +3,7 @@ import uuid
 import requests
 from datetime import datetime
 from botocore.exceptions import ClientError
+from typing import Optional
 
 import yig.config
 from yig.bot import Bot
@@ -114,18 +115,19 @@ def remove_user_data(bot: Bot, guild_id: str, user_id: str, filename: str) -> bo
     return True
 
 
-
-def add_dice_log(bot: Bot, guild_id: str, channel_id: str ,user_id: str, roll: str, num_targ: str, num_rand: str, result: str):
-    timestamp = datetime.utcnow().isoformat()
+def add_dice_log(bot: Bot, guild_id: str, channel_id: str ,user_id: str, pc_id:str, roll: str, num_targ: str, num_rand: str, result: str):
+    timestamp = datetime.now().isoformat()
     log_id = str(uuid.uuid4())
 
     item = {
-        'PK': f"GUILD#{guild_id}#CHANNEL#{channel_id}",
-        'SK': f"{timestamp}#{log_id}",
-        'EntityType': 'DICELOG',
+        'PK': f"GUILD#{guild_id}#CHANNEL#{channel_id}#USER#{user_id}#CHARACTER#{pc_id}",
+        'SK': timestamp,
+        'GSI1PK': f"USER#{user_id}",
+        'GSI1SK': timestamp,
         'GuildID': guild_id,
         'ChannelID': channel_id,
         'UserID': user_id,
+        'CharacterID': pc_id,
         'RollResult': roll,
         'NumTarg': num_targ,
         'NumRand': num_rand,
@@ -143,6 +145,37 @@ def add_dice_log(bot: Bot, guild_id: str, channel_id: str ,user_id: str, roll: s
     except Exception as e:
         print(f"エラーが発生しました: {str(e)}")
         return None
+
+
+def get_dice_logs(bot:Bot, guild_id:str, channel_id:str, user_id:str, pc_id:str) -> Optional[list[dict]]:
+    """
+    DynamoDBからダイスログを取得する関数
+
+    :param bot: Botオブジェクト
+    :param guild_id: ギルドID
+    :param channel_id: チャンネルID
+    :param limit: 取得するアイテムの最大数
+    :return: ダイスログのリスト、エラー時はNone
+    """
+    try:
+        dynamodb = bot.boto3.resource('dynamodb')
+        Key = bot.boto3_dynamodb_conditions.Key
+        table = dynamodb.Table("CoCBotKPDiscord")
+
+
+        response = table.query(
+            KeyConditionExpression=Key('PK').eq(f"GUILD#{guild_id}#CHANNEL#{channel_id}#USER#{user_id}#CHARACTER#{pc_id}"),
+            ScanIndexForward=True
+        )
+
+        items = response.get('Items', [])
+        print(f"ユーザー {bot.user_id} の {len(items)} 件のダイスログを取得しました")
+        return items
+
+    except Exception as e:
+        print(f"エラーが発生しました: {str(e)}")
+        return None
+
 
 def write_session_data(bot: Bot, guild_id: str, path: str, content:dict):
     """
