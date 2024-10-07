@@ -47,8 +47,6 @@ def update_user_status(bot):
         bot=bot, guild_id=bot.guild_id, user_id=bot.user_id, filename=yig.config.STATE_FILE_PATH, content=user_data
     )
 
-    print(user_data)
-
     now_hp, max_hp, now_mp, max_mp, now_san, max_san, db = get_basic_status(
         user_param, user_data
     )
