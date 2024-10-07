@@ -83,9 +83,10 @@ if __name__ == "__main__":
                                     options_description="please enter the name of the session you are about to start",
                                     options_type=3,
                                     options_required=True))
-    
+
     commands.append(build_single_command_data(name="reload", description="reload the character sheet"))
     commands.append(build_single_command_data(name="status", description="show status"))
+    commands.append(build_single_command_data(name="result", description="session result"))
 
 
     ApiEndpoint = f"https://discord.com/api/v10/applications/{APP_ID}/commands"
